@@ -37,7 +37,7 @@ class ABXI(torch.nn.Module):
         ## 2: V2, -proj'
         ## 3: V3, -iLoRA'
         ## 4: V4, -dLoRA, -proj, -iLoRA'
-        ## 5 : V5, use timestamp-guided alignment')
+        ## 5 : V5, use timestamp-guided alignment'
 
         # item and positional embedding
         self.ei = nn.Embedding(self.n_item + 1, self.d_latent, padding_idx=0)

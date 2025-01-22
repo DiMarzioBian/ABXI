@@ -12,7 +12,7 @@ class Trainer(object):
     def __init__(self, args, noter):
         print('[info] Loading data')
         if args.v == 5:
-            from dataloader_ts import get_dataloader
+            from dataloader_old import get_dataloader
         else:
             from dataloader import get_dataloader
 

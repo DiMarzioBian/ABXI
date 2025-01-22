@@ -13,23 +13,24 @@ Please check demo.sh on running on different datasets.
 
 ### 2.1. Ablation
 
-Please specific `--x` command to switch from different ablation variants. The default is `--x 0` that refers to ABXI. Other variants' indices are listed below.
+Please specific `--v` command to switch from different ablation variants. The default is `--v 0` that refers to ABXI. Other variants' indices are listed below.
 ```
--3: encoder + dLoRA + proj + 2*proj (ABXI-i3)
--2: encoder + dLoRA + 2*proj (ABXI-i2)
--1: 3*encoder + proj + iLoRA (ABXI-d)
- 0: encoder + dLoRA + proj + iLoRA (ABXI)
- 1: encoder + proj + iLoRA (v1)
- 2: encoder + dLoRA + iLoRA (v2)
- 3: encoder + dLoRA + proj (v3)
- 4: encoder (v4)
- 5: encoder + dLoRA + proj + iLoRA + old alignment
+-4: ABXI-dp, dLoRA -> projector'
+-3: ABXI-i3, iLoRA -> projector'
+-2: ABXI-i2, -proj_i, iLoRA -> projector'
+-1: ABXI-d, shared encoder + dLoRA -> 3 * encoder'
+0: ABXI'
+1: V1, -dLoRA'
+2: V2, -proj'
+3: V3, -iLoRA'
+4: V4, -dLoRA, -proj, -iLoRA'
+5 : V5, use timestamp-guided alignment'
 ```
 
 
 ## 3. File Tree
 ```
-ABXI-Anony/
+ABXI/
 ├── data/
 │   ├── abe/
 │   │   ├── abe_50_preprocessed.txt
