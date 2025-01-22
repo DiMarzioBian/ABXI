@@ -10,7 +10,7 @@ class Noter(object):
 
         self.t_start = time.time()
         self.f_log = join(args.path_log, f'{args.data}-{time.strftime("%m-%d-%H-%M", time.localtime())}-'
-                                         f'{str(args.device)[0] + str(args.device)[-1]}-{args.seed}--x{args.x}-{args.rd}-{args.ri}-abxi.log')
+                                         f'{str(args.device)[0] + str(args.device)[-1]}-{args.seed}--v{args.v}-{args.rd}-{args.ri}-abxi.log')
 
         if os.path.exists(self.f_log):
             os.remove(self.f_log)  # remove the existing file if duplicate
