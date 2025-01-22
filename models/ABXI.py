@@ -20,32 +20,43 @@ class ABXI(torch.nn.Module):
         self.n_item_a = args.n_item_a
         self.n_item_b = args.n_item_b
         self.n_neg = args.n_neg
+        self.temp = args.temp
+
         self.d_latent = args.d_latent
         self.rd = args.rd
         self.ri = args.ri
 
-        self.t_rec = args.t_rec
-
-        self.x = args.x
+        self.v = args.v
+        # version control, v =
+        ## -4: ABXI-dp, dLoRA -> projector'
+        ## -3: ABXI-i3, iLoRA -> projector'
+        ## -2: ABXI-i2, -proj_i, iLoRA -> projector'
+        ## -1: ABXI-d, shared encoder + dLoRA -> 3 * encoder'
+        ## 0: ABXI'
+        ## 1: V1, -dLoRA'
+        ## 2: V2, -proj'
+        ## 3: V3, -iLoRA'
+        ## 4: V4, -dLoRA, -proj, -iLoRA'
+        ## 5 : V5, use timestamp-guided alignment')
 
         # item and positional embedding
         self.ei = nn.Embedding(self.n_item + 1, self.d_latent, padding_idx=0)
         self.ep = nn.Embedding(self.len_trim + 1, args.d_latent, padding_idx=0)
 
         # encoder, dlora
-        self.mhsa = MultiHeadAttention(args)
+        self.mha = MultiHeadAttention(args)
         self.ffn = FeedForward(self.d_latent)
         self.dropout = nn.Dropout(args.dropout)
 
-        if self.x == -1:
-            self.mhsa_a = MultiHeadAttention(args)
-            self.mhsa_b = MultiHeadAttention(args)
+        if self.v == -1:
+            self.mha_a = MultiHeadAttention(args)
+            self.mha_b = MultiHeadAttention(args)
 
             self.ffn_a = FeedForward(self.d_latent)
             self.ffn_b = FeedForward(self.d_latent)
 
-        elif self.x not in (1, 4):
-            if self.x != -4:
+        elif self.v not in (1, 4):
+            if self.v != -4:
                 self.dlora_x = LoRA(self.d_latent, self.rd)
                 self.dlora_a = LoRA(self.d_latent, self.rd)
                 self.dlora_b = LoRA(self.d_latent, self.rd)
@@ -59,19 +70,19 @@ class ABXI(torch.nn.Module):
         self.norm_sa_b = nn.LayerNorm(self.d_latent)
 
         # ilora
-        if self.x in (-2, -3):
+        if self.v in (-2, -3):
             self.proj_x2a = FeedForward(self.d_latent)
             self.proj_x2b = FeedForward(self.d_latent)
 
-            if self.x == -3:
+            if self.v == -3:
                 self.proj_x2i = FeedForward(self.d_latent)
 
-        elif self.x not in (3, 4):
+        elif self.v not in (3, 4):
             self.ilora_a = LoRA(self.d_latent, self.ri)
             self.ilora_b = LoRA(self.d_latent, self.ri)
 
         # proj
-        if self.x not in (2, 4):
+        if self.v not in (2, 4):
             self.proj_i = FeedForward(self.d_latent)
             self.proj_a = FeedForward(self.d_latent)
             self.proj_b = FeedForward(self.d_latent)
@@ -90,14 +101,14 @@ class ABXI(torch.nn.Module):
         e_b = self.dropout((self.ei(seq_b) + self.ep(pos_b)) * mask_b)
 
         # mha
-        h_sa_x = self.mhsa(e_x, mask_x)
-        if self.x == -1:
-            h_sa_a = self.mhsa_a(e_a, mask_a)
-            h_sa_b = self.mhsa_b(e_b, mask_b)
+        h_sa_x = self.mha(e_x, mask_x)
+        if self.v == -1:
+            h_sa_a = self.mha_a(e_a, mask_a)
+            h_sa_b = self.mha_b(e_b, mask_b)
 
         else:
-            h_sa_a = self.mhsa(e_a, mask_a)
-            h_sa_b = self.mhsa(e_b, mask_b)
+            h_sa_a = self.mha(e_a, mask_a)
+            h_sa_b = self.mha(e_b, mask_b)
 
         # switch training / evaluating
         if self.training:
@@ -110,12 +121,12 @@ class ABXI(torch.nn.Module):
             h_sa_b = h_sa_b[:, -1]
 
         # ffn
-        if self.x in (1, 4):
+        if self.v in (1, 4):
             h_sa_x = self.norm_sa_x(h_sa_x + self.dropout(self.ffn(h_sa_x))) * mask_x
             h_sa_a = self.norm_sa_a(h_sa_a + self.dropout(self.ffn(h_sa_a))) * mask_a
             h_sa_b = self.norm_sa_b(h_sa_b + self.dropout(self.ffn(h_sa_b))) * mask_b
 
-        elif self.x == -1:
+        elif self.v == -1:
             h_sa_x = self.norm_sa_x(h_sa_x + self.dropout(self.ffn(h_sa_x))) * mask_x
             h_sa_a = self.norm_sa_a(h_sa_a + self.dropout(self.ffn_a(h_sa_a))) * mask_a
             h_sa_b = self.norm_sa_b(h_sa_b + self.dropout(self.ffn_b(h_sa_b))) * mask_b
@@ -126,11 +137,11 @@ class ABXI(torch.nn.Module):
             h_sa_b = self.norm_sa_b(h_sa_b + self.dropout(self.ffn(h_sa_b)) + self.dropout(self.dlora_b(h_sa_b))) * mask_b
 
         # proj, ilora
-        if self.x == 4:
+        if self.v == 4:
             h_a = self.norm_a2a(h_sa_x + h_sa_a)
             h_b = self.norm_b2b(h_sa_x + h_sa_b)
 
-        elif self.x in (-4, -1, 0, 1, 5, 6):
+        elif self.v in (-4, -1, 0, 1, 5):
             p_i = self.proj_i(h_sa_x)
 
             h_i2a = self.norm_i2a((h_sa_x +
@@ -150,7 +161,7 @@ class ABXI(torch.nn.Module):
             h_a = h_i2a + h_a2a
             h_b = h_i2b + h_b2b
 
-        elif self.x == 2:
+        elif self.v == 2:
             h_i2a = self.norm_i2a((h_sa_x +
                                    self.dropout(self.ilora_a(h_sa_x))) * mask_gt_a)
 
@@ -160,7 +171,7 @@ class ABXI(torch.nn.Module):
             h_a = h_i2a + h_sa_a
             h_b = h_i2b + h_sa_b
 
-        elif self.x == 3:
+        elif self.v == 3:
             p_i = self.proj_i(h_sa_x)
 
             h_i2a = self.norm_i2a((h_sa_x +
@@ -178,7 +189,7 @@ class ABXI(torch.nn.Module):
             h_a = h_i2a + h_a2a
             h_b = h_i2b + h_b2b
 
-        elif self.x == -2:
+        elif self.v == -2:
             h_i2a = self.norm_i2a((h_sa_x +
                                    self.dropout(self.proj_x2a(h_sa_x))) * mask_gt_a)
 
@@ -194,7 +205,7 @@ class ABXI(torch.nn.Module):
             h_a = h_i2a + h_a2a
             h_b = h_i2b + h_b2b
 
-        elif self.x == -3:
+        elif self.v == -3:
             p_i = self.proj_x2i(h_sa_x)
 
             h_i2a = self.norm_i2a((h_sa_x +
@@ -215,7 +226,7 @@ class ABXI(torch.nn.Module):
             h_b = h_i2b + h_b2b
 
         else:
-            raise NotImplemented(f'Wrong x = {self.x}.')
+            raise NotImplemented(f'Wrong v = {self.v}.')
 
         h = h_a * mask_gt_a + h_b * mask_gt_b
         return h, h_sa_x, h_sa_a, h_sa_b
@@ -229,7 +240,7 @@ class ABXI(torch.nn.Module):
             e_neg = e_neg.detach()
 
         logits = torch.cat(((h * e_gt).unsqueeze(-2).sum(-1),
-                            (h.unsqueeze(-2) * e_neg).sum(-1)), dim=-1).div(self.t_rec)
+                            (h.unsqueeze(-2) * e_neg).sum(-1)), dim=-1).div(self.temp)
 
         loss = -F.log_softmax(logits, dim=2)[:, :, 0]
         loss_a = (loss * cal_norm_mask(mask_gt_a)).sum(-1).mean()

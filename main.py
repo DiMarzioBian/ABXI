@@ -20,12 +20,12 @@ def main():
                                                                 'amb: Movie-Book'
                                                                 'abe: Beauty-Electronics')
 
-    parser.add_argument('--x', type=int, default=0, help='type of ABXI:'
-                                                         '-4: ABXI-dp, dLoRA -> proj'
-                                                         '-3: ABXI-i3, iLoRA -> proj'
-                                                         '-2: ABXI-i2, -proj_i, iLoRA -> pro'
-                                                         '-1: ABXI-d, encoder + dLoRA -> 3 * encoder'
-                                                         '0: ABXI, proposed'
+    parser.add_argument('--v', type=int, default=0, help='type of ABXI:'
+                                                         '-4: ABXI-dp, dLoRA -> projector'
+                                                         '-3: ABXI-i3, iLoRA -> projector'
+                                                         '-2: ABXI-i2, -proj_i, iLoRA -> projector'
+                                                         '-1: ABXI-d, shared encoder + dLoRA -> 3 * encoder'
+                                                         '0: ABXI'
                                                          '1: V1, -dLoRA'
                                                          '2: V2, -proj'
                                                          '3: V3, -iLoRA'
@@ -47,7 +47,7 @@ def main():
     parser.add_argument('--n_attn', type=int, default=1, help='# layer of TransformerEncoderLayer stack')
     parser.add_argument('--n_head', type=int, default=2, help='# multi-head for self-attention')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout rate')
-    parser.add_argument('--t_rec', type=float, default=0.75, help='temperature for Recommendation')
+    parser.add_argument('--temp', type=float, default=0.75, help='temperature for Recommendation')
 
     # Training
     parser.add_argument('--cuda', type=str, default='0', help='running device')

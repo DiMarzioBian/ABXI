@@ -36,7 +36,7 @@ class Noter(object):
                f'| Ver.  {self.args.ver} |\n'
                f'| len_max {self.args.len_max} | n_attn {self.args.n_attn} | n_head {self.args.n_head} | dropout {self.args.dropout} |\n'
                f'| lr {self.args.lr:.2e} | l2 {self.args.l2:.2e} | lr_g {self.args.lr_g:.1f} | lr_p {self.args.lr_p} |\n\n'
-               f'| seed {self.args.seed} | x {self.args.x} |\n'
+               f'| seed {self.args.seed} | v {self.args.v} |\n'
                f'| rd {self.args.rd} | ri {self.args.ri} |\n\n')
         self.log_msg(msg)
 

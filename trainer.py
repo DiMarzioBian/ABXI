@@ -11,8 +11,8 @@ from utils.metrics import cal_metrics
 class Trainer(object):
     def __init__(self, args, noter):
         print('[info] Loading data')
-        if args.x == 5:
-            from dataloader_old import get_dataloader
+        if args.v == 5:
+            from dataloader_ts import get_dataloader
         else:
             from dataloader import get_dataloader
 
