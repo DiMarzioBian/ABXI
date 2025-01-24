@@ -28,10 +28,10 @@ class ABXI(torch.nn.Module):
 
         self.v = args.v
         # version control, v =
-        ## -4: ABXI-dp, dLoRA -> projector'
+        ## -4: ABXI-dp3, dLoRA -> projector'
         ## -3: ABXI-i3, iLoRA -> projector'
         ## -2: ABXI-i2, -proj_i, iLoRA -> projector'
-        ## -1: ABXI-d, shared encoder + dLoRA -> 3 * encoder'
+        ## -1: ABXI-e3, shared encoder + dLoRA -> 3 * encoder'
         ## 0: ABXI'
         ## 1: V1, -dLoRA'
         ## 2: V2, -proj'
