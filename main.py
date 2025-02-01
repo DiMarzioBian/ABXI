@@ -13,7 +13,7 @@ from trainer import Trainer
 
 def main():
     parser = argparse.ArgumentParser(description='ABXI-Experiment')
-    parser.add_argument('--name', type=str, default='ABXI (WWW\'24)', help='name of the model')
+    parser.add_argument('--name', type=str, default='ABXI (WWW\'25)', help='name of the model')
     parser.add_argument('--ver', type=str, default='v1.0', help='final')
 
     parser.add_argument('--data', type=str, default='abe', help='afk: Food-Kitchen'
