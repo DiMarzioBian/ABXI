@@ -17,16 +17,16 @@ Please check demo.sh on running on different datasets.
 
 Please specific `--v` command to switch from different ablation variants. The default is `--v 0` that refers to ABXI. Other variants' indices are listed below.
 ```
--4: ABXI-dp, dLoRA -> projector'
--3: ABXI-i3, iLoRA -> projector'
--2: ABXI-i2, -proj_i, iLoRA -> projector'
--1: ABXI-d, shared encoder + dLoRA -> 3 * encoder'
-0: ABXI'
-1: V1, -dLoRA'
-2: V2, -proj'
-3: V3, -iLoRA'
-4: V4, -dLoRA, -proj, -iLoRA'
-5 : V5, use timestamp-guided alignment'
+-4: ABXI-dp3, dLoRA -> projector
+-3: ABXI-i3, iLoRA -> projector
+-2: ABXI-i2, -proj_i, iLoRA -> projector
+-1: ABXI-e3, shared encoder + dLoRA -> 3 * encoder
+0: ABXI
+1: V1, -dLoRA
+2: V2, -proj
+3: V3, -iLoRA
+4: V4, -dLoRA, -proj, -iLoRA
+5: V5, use timestamp-guided alignment
 ```
 
 
