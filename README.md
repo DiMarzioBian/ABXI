@@ -69,4 +69,4 @@ ABXI/
     └── preprocess.py
 ```
 
-Because the files 'amb_50_seq.pkl' and 'amb_50_seq_old.pkl' exceeds Github file size limit, you have to manually generate this preprocessed serialized data first, by adding argument '--raw' in the first experiment on Movie-Book dataset.
+Because the files 'amb_50_seq.pkl' and 'amb_50_seq_old.pkl' exceed Github file size limit, you have to manually generate this preprocessed serialized data first, by adding argument '--raw' in the first experiment on Movie-Book dataset.
