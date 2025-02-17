@@ -52,12 +52,12 @@ def main():
     # Training
     parser.add_argument('--cuda', type=str, default='0', help='running device')
     parser.add_argument('--seed', type=int, default=3407, help='random seeding')
-    parser.add_argument('--bs', type=int, default=32, help='batch size')
-    parser.add_argument('--n_worker', type=int, default=0, help='# dataloader worker')
+    parser.add_argument('--bs', type=int, default=256, help='batch size')
+    parser.add_argument('--n_worker', type=int, default=28, help='# dataloader worker')
     parser.add_argument('--n_epoch', type=int, default=500, help='# epoch maximum')
     parser.add_argument('--n_warmup', type=int, default=5, help='# warmup epoch')
-    parser.add_argument('--lr', type=float, default=1e-3, help='learning rate')
-    parser.add_argument('--l2', type=float, default=1e-3, help='weight decay')
+    parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')
+    parser.add_argument('--l2', type=float, default=5e0, help='weight decay')
     parser.add_argument('--lr_g', type=float, default=0.3162, help='scheduler gamma')
     parser.add_argument('--lr_p', type=int, default=30, help='scheduler patience')
 
