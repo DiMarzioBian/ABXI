@@ -22,7 +22,6 @@ class Trainer(object):
 
         self.noter = noter
         self.device = args.device
-        self.d_latent = args.d_latent
 
         # model
         self.model = ABXI(args).to(args.device)

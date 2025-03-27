@@ -22,7 +22,7 @@ class ABXI(torch.nn.Module):
         self.n_neg = args.n_neg
         self.temp = args.temp
 
-        self.d_latent = args.d_latent
+        self.d_embed = args.d_embed
         self.rd = args.rd
         self.ri = args.ri
 
@@ -40,57 +40,57 @@ class ABXI(torch.nn.Module):
         ## 5 : V5, use timestamp-guided alignment'
 
         # item and positional embedding
-        self.ei = nn.Embedding(self.n_item + 1, self.d_latent, padding_idx=0)
-        self.ep = nn.Embedding(self.len_trim + 1, args.d_latent, padding_idx=0)
+        self.ei = nn.Embedding(self.n_item + 1, self.d_embed, padding_idx=0)
+        self.ep = nn.Embedding(self.len_trim + 1, args.d_embed, padding_idx=0)
 
         # encoder, dlora
         self.mha = MultiHeadAttention(args)
-        self.ffn = FeedForward(self.d_latent)
+        self.ffn = FeedForward(self.d_embed)
         self.dropout = nn.Dropout(args.dropout)
 
         if self.v == -1:
             self.mha_a = MultiHeadAttention(args)
             self.mha_b = MultiHeadAttention(args)
 
-            self.ffn_a = FeedForward(self.d_latent)
-            self.ffn_b = FeedForward(self.d_latent)
+            self.ffn_a = FeedForward(self.d_embed)
+            self.ffn_b = FeedForward(self.d_embed)
 
         elif self.v not in (1, 4):
             if self.v != -4:
-                self.dlora_x = LoRA(self.d_latent, self.rd)
-                self.dlora_a = LoRA(self.d_latent, self.rd)
-                self.dlora_b = LoRA(self.d_latent, self.rd)
+                self.dlora_x = LoRA(self.d_embed, self.rd)
+                self.dlora_a = LoRA(self.d_embed, self.rd)
+                self.dlora_b = LoRA(self.d_embed, self.rd)
             else:
-                self.dlora_x = FeedForward(self.d_latent)
-                self.dlora_a = FeedForward(self.d_latent)
-                self.dlora_b = FeedForward(self.d_latent)
+                self.dlora_x = FeedForward(self.d_embed)
+                self.dlora_a = FeedForward(self.d_embed)
+                self.dlora_b = FeedForward(self.d_embed)
 
-        self.norm_sa_x = nn.LayerNorm(self.d_latent)
-        self.norm_sa_a = nn.LayerNorm(self.d_latent)
-        self.norm_sa_b = nn.LayerNorm(self.d_latent)
+        self.norm_sa_x = nn.LayerNorm(self.d_embed)
+        self.norm_sa_a = nn.LayerNorm(self.d_embed)
+        self.norm_sa_b = nn.LayerNorm(self.d_embed)
 
         # ilora
         if self.v in (-2, -3):
-            self.proj_x2a = FeedForward(self.d_latent)
-            self.proj_x2b = FeedForward(self.d_latent)
+            self.proj_x2a = FeedForward(self.d_embed)
+            self.proj_x2b = FeedForward(self.d_embed)
 
             if self.v == -3:
-                self.proj_x2i = FeedForward(self.d_latent)
+                self.proj_x2i = FeedForward(self.d_embed)
 
         elif self.v not in (3, 4):
-            self.ilora_a = LoRA(self.d_latent, self.ri)
-            self.ilora_b = LoRA(self.d_latent, self.ri)
+            self.ilora_a = LoRA(self.d_embed, self.ri)
+            self.ilora_b = LoRA(self.d_embed, self.ri)
 
         # proj
         if self.v not in (2, 4):
-            self.proj_i = FeedForward(self.d_latent)
-            self.proj_a = FeedForward(self.d_latent)
-            self.proj_b = FeedForward(self.d_latent)
+            self.proj_i = FeedForward(self.d_embed)
+            self.proj_a = FeedForward(self.d_embed)
+            self.proj_b = FeedForward(self.d_embed)
 
-        self.norm_i2a = nn.LayerNorm(self.d_latent)
-        self.norm_i2b = nn.LayerNorm(self.d_latent)
-        self.norm_a2a = nn.LayerNorm(self.d_latent)
-        self.norm_b2b = nn.LayerNorm(self.d_latent)
+        self.norm_i2a = nn.LayerNorm(self.d_embed)
+        self.norm_i2b = nn.LayerNorm(self.d_embed)
+        self.norm_a2a = nn.LayerNorm(self.d_embed)
+        self.norm_b2b = nn.LayerNorm(self.d_embed)
 
         self.apply(init_weights)
 

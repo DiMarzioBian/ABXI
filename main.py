@@ -43,7 +43,7 @@ def main():
     parser.add_argument('--n_mtc', type=int, default=999, help='# negative metric samples')
 
     # Model
-    parser.add_argument('--d_latent', type=int, default=256, help='dimension of latent representation')
+    parser.add_argument('--d_embed', type=int, default=256, help='dimension of embedding vector')
     parser.add_argument('--n_attn', type=int, default=1, help='# layer of TransformerEncoderLayer stack')
     parser.add_argument('--n_head', type=int, default=2, help='# multi-head for self-attention')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout rate')
@@ -53,7 +53,7 @@ def main():
     parser.add_argument('--cuda', type=str, default='0', help='running device')
     parser.add_argument('--seed', type=int, default=3407, help='random seeding')
     parser.add_argument('--bs', type=int, default=256, help='batch size')
-    parser.add_argument('--n_worker', type=int, default=28, help='# dataloader worker')
+    parser.add_argument('--n_worker', type=int, default=0, help='# dataloader worker')
     parser.add_argument('--n_epoch', type=int, default=500, help='# epoch maximum')
     parser.add_argument('--n_warmup', type=int, default=5, help='# warmup epoch')
     parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')

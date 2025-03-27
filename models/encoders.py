@@ -5,14 +5,14 @@ import torch.nn.functional as F
 
 class FeedForward(nn.Module):
     """ SwiGLU-FFN """
-    def __init__(self, d_latent, d_ffn=680):
+    def __init__(self, d_embed, d_ffn=680):
         super().__init__()
-        self.d_latent = d_latent
+        self.d_embed = d_embed
         self.d_ffn = d_ffn
 
-        self.fc_1 = nn.Linear(d_latent, self.d_ffn, bias=False)
-        self.fc_2 = nn.Linear(d_latent, self.d_ffn, bias=False)
-        self.fc_3 = nn.Linear(self.d_ffn, d_latent, bias=False)
+        self.fc_1 = nn.Linear(d_embed, self.d_ffn, bias=False)
+        self.fc_2 = nn.Linear(d_embed, self.d_ffn, bias=False)
+        self.fc_3 = nn.Linear(self.d_ffn, d_embed, bias=False)
 
     def forward(self, h):
         h = self.fc_3(F.silu(self.fc_2(h)) * self.fc_1(h))
@@ -22,9 +22,9 @@ class FeedForward(nn.Module):
 class MultiHeadAttention(nn.Module):
     def __init__(self, args):
         super().__init__()
-        self.mha = nn.MultiheadAttention(args.d_latent, args.n_head, batch_first=True)
+        self.mha = nn.MultiheadAttention(args.d_embed, args.n_head, batch_first=True)
         self.dropout = nn.Dropout(args.dropout)
-        self.norm_mha = nn.LayerNorm(args.d_latent)
+        self.norm_mha = nn.LayerNorm(args.d_embed)
 
         self.register_buffer('mask_causal',
                              torch.triu(torch.full((args.len_trim,
