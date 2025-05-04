@@ -33,13 +33,12 @@ Please specific `--v` command to switch from different ablation variants. The de
 
 If you found the codes are useful, please cite our paper.
 
-    @inproceedings{
-    bian2025abxi,
-    title={{ABXI}: Invariant Interest Adaptation for Task-Guided Cross-Domain Sequential Recommendation},
-    author={Qingtian Bian and Marcus Vinicius De Carvalho and Tieying Li and Jiaxing Xu and Hui Fang and Yiping Ke},
-    booktitle={THE WEB CONFERENCE 2025},
-    year={2025},
-    url={https://openreview.net/forum?id=5AHO1syvXl}
+    @inproceedings{bian2025abxi,
+      title={ABXI: Invariant Interest Adaptation for Task-Guided Cross-Domain Sequential Recommendation},
+      author={Bian, Qingtian and de Carvalho, Marcus and Li, Tieying and Xu, Jiaxing and Fang, Hui and Ke, Yiping},
+      booktitle={Proceedings of the ACM on Web Conference 2025},
+      pages={3183--3192},
+      year={2025}
     }
 
 
