@@ -137,9 +137,9 @@ def main():
 
     # Training
     parser.add_argument('--data', type=str, default='abe', help='name of the dataset')
-    parser.add_argument('--k_i', type=int, default=10, help='least interactions for each users/items in both domains')
-    parser.add_argument('--k_u', type=int, default=5, help='least interactions for each users/items in each domain')
-    parser.add_argument('--len_max', type=int, default=50, help='least interactions for each users/items in each domain')
+    parser.add_argument('--k_i', type=int, default=10, help='least interactions for each item in both domains')
+    parser.add_argument('--k_u', type=int, default=5, help='least interactions for each user in each domain')
+    parser.add_argument('--len_max', type=int, default=50, help='length threshold for each sequence')
     args = parser.parse_args()
 
     (path_a, path_b) = MAPPING_FILE_NAME[args.data]
