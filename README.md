@@ -32,8 +32,8 @@ If you found the codes are useful, please cite our paper.
 
     ABXI/
     ├── data/
-        └── prepare_amazon.py
-        └── mapper_raw_file.py
+    │   ├── prepare_amazon.py
+    │   ├── mapper_raw_file.py
     │   ├── abe/
     │   │   ├── abe_50_preprocessed.txt
     │   │   ├── abe_50_seq.pkl
