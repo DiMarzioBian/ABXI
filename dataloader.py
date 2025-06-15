@@ -80,16 +80,7 @@ class CDSRDataset(Dataset):
         serialized_val = []
         serialized_te = []
 
-        # a2b, b2a, n = 0, 0, 0
-
         for idx_u, seq in tqdm(zip(data_u, data_ui), desc='processing', leave=False):
-
-            # n += len(seq)
-            # for i, ii in zip(seq[:-1], seq[1:]):
-            #     if i <= self.n_item_a and ii > self.n_item_a:
-            #         a2b += 1
-            #     elif i > self.n_item_a and ii <= self.n_item_a:
-            #         b2a += 1
 
             serialized_tr.append(self.process_train(idx_u, seq))
             serialized_val.append(self.process_valid(idx_u, seq))

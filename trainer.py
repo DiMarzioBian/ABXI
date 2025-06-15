@@ -12,7 +12,7 @@ from utils.metrics import cal_metrics
 class Trainer(object):
     def __init__(self, args, noter):
         print('[info] Loading data')
-
+        self.n_warmup = args.n_warmup
         self.dl = get_dataloader(args)
         self.n_user, self.n_item, self.n_item_a, self.n_item_b = self.dl.dataset.get_stat()
         print('Done.\n')
@@ -37,7 +37,6 @@ class Trainer(object):
         t0 = time.time()
 
         # training
-        self.noter.log_msg(f'\n[epoch {i_epoch:>2}]')
         for batch in tqdm(self.dl, desc='training', leave=False):
             loss_a_batch, loss_b_batch = self.train_batch(batch)
 
@@ -46,6 +45,9 @@ class Trainer(object):
             loss_b += (loss_b_batch * n_seq) / self.n_user
 
         self.noter.log_train(i_epoch, loss_a, loss_b, time.time() - t0)
+
+        if i_epoch <= self.n_warmup:
+            return None, None
 
         # validating
         self.model.eval()
@@ -65,7 +67,7 @@ class Trainer(object):
     def run_test(self):
         self.model.eval()
         self.dl.dataset.set_test()
-        res_ranks = [[] for _ in range(8)]
+        res_ranks = [[], []]
 
         with torch.no_grad():
             for batch in tqdm(self.dl, desc='testing', leave=False):

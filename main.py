@@ -91,7 +91,7 @@ def main():
     trainer = Trainer(args, noter)
 
     cnt_es, cnt_lr, mrr_log = 0, 0, 0.
-    res_ranks = [0] * 6
+    res_ranks = [[], []]
 
     for epoch in range(1, args.n_epoch + 1):
         lr_cur = trainer.optimizer.param_groups[0]["lr"]
@@ -99,7 +99,7 @@ def main():
 
         if epoch <= args.n_warmup:
             lr_str = f'{lr_cur:.5e}'
-            noter.log_msg(f'|     |  lr | {lr_str[:3]}e-{lr_str[-1]} | warmup |')
+            noter.log_lr(f'| {lr_str[:3]}e-{lr_str[-1]} | warmup |')
             trainer.scheduler_warmup.step()
 
         else:
@@ -111,7 +111,7 @@ def main():
                 cnt_es = 0
                 cnt_lr = 0
                 lr_str = f'{lr_cur:.5e}'
-                noter.log_msg(f'|     |  lr | {lr_str[:3]}e-{lr_str[-1]} |  0 /{args.lr_p:2} |  0 /{args.es_p:2} |')
+                noter.log_lr(f'| {lr_str[:3]}e-{lr_str[-1]} |  0 /{args.lr_p:2} |  0 /{args.es_p:2} |')
 
                 res_ranks = trainer.run_test()
                 noter.log_test(res_ranks)

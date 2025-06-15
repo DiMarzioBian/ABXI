@@ -57,26 +57,20 @@ class Noter(object):
         msg = f'           | te  |  *  | {ranks[0][0]:.4f} | {ranks[0][1]:.4f} | {ranks[0][2]:.4f} | {ranks[0][3]:.4f} | {ranks[1][0]:.4f} | {ranks[1][1]:.4f} | {ranks[1][2]:.4f} | {ranks[1][3]:.4f} |  *  |'
         self.log_msg(msg)
 
-    def log_final(self, res_f2a, res_f2b, res_c2a, res_c2b, res_a2a, res_a2b, res_b2a, res_b2b):
+    def log_final(self, ranks):
         self.log_msg(f'\n{"-" * 10} Experiment ended {"-" * 10}')
         self.log_settings()
         msg = (f'[ Info ] {self.args.name} ({(time.time() - self.t_start) / 60:.1f} min)\n'
-               f'      |                A                  |                B                  |\n'
-               f'      |  hr5   |  hr10  | ndcg10 |  mrr   |  hr5   |  hr10  | ndcg10 |  mrr   |\n'
-               f'|  f  | {res_f2a[0]:.4f} | {res_f2a[1]:.4f} | {res_f2a[2]:.4f} | {res_f2a[3]:.4f} | {res_f2b[0]:.4f} | {res_f2b[1]:.4f} | {res_f2b[2]:.4f} | {res_f2b[3]:.4f} |\n'
-               f'|  x  | {res_c2a[0]:.4f} | {res_c2a[1]:.4f} | {res_c2a[2]:.4f} | {res_c2a[3]:.4f} | {res_c2b[0]:.4f} | {res_c2b[1]:.4f} | {res_c2b[2]:.4f} | {res_c2b[3]:.4f} |\n'
-               f'|  a  | {res_a2a[0]:.4f} | {res_a2a[1]:.4f} | {res_a2a[2]:.4f} | {res_a2a[3]:.4f} | {res_a2b[0]:.4f} | {res_a2b[1]:.4f} | {res_a2b[2]:.4f} | {res_a2b[3]:.4f} |\n'
-               f'|  b  | {res_b2a[0]:.4f} | {res_b2a[1]:.4f} | {res_b2a[2]:.4f} | {res_b2a[3]:.4f} | {res_b2b[0]:.4f} | {res_b2b[1]:.4f} | {res_b2b[2]:.4f} | {res_b2b[3]:.4f} |\n')
+               f'|                A                  |                B                  |\n'
+               f'|  hr5   |  hr10  | ndcg10 |  mrr   |  hr5   |  hr10  | ndcg10 |  mrr   |\n'
+               f'| {ranks[0][0]:.4f} | {ranks[0][1]:.4f} | {ranks[0][2]:.4f} | {ranks[0][3]:.4f} | {ranks[1][0]:.4f} | {ranks[1][1]:.4f} | {ranks[1][2]:.4f} | {ranks[1][3]:.4f} |\n')
         self.log_msg(msg)
 
     def log_final_result(self, ranks):
         self.log_msg(f'\n{"-" * 10} Experiment ended {"-" * 10}')
         self.log_settings()
         msg = (f'[ Info ] {self.args.name} ({(time.time() - self.t_start) / 60:.1f} min)\n'
-               f'|     |                A                  |                B                  |\n'
-               f'|     |  hr5   |  hr10  | ndcg10 |  mrr   |  hr5   |  hr10  | ndcg10 |  mrr   |\n'
-               f'|  F  | {ranks[0][0]:.4f} | {ranks[0][1]:.4f} | {ranks[0][2]:.4f} | {ranks[0][3]:.4f} | {ranks[1][0]:.4f} | {ranks[1][1]:.4f} | {ranks[1][2]:.4f} | {ranks[1][3]:.4f} |\n'
-               f'|  X  | {ranks[2][0]:.4f} | {ranks[2][1]:.4f} | {ranks[2][2]:.4f} | {ranks[2][3]:.4f} | {ranks[3][0]:.4f} | {ranks[3][1]:.4f} | {ranks[3][2]:.4f} | {ranks[3][3]:.4f} |\n'
-               f'|  A  | {ranks[4][0]:.4f} | {ranks[4][1]:.4f} | {ranks[4][2]:.4f} | {ranks[4][3]:.4f} | {ranks[5][0]:.4f} | {ranks[5][1]:.4f} | {ranks[5][2]:.4f} | {ranks[5][3]:.4f} |\n'
-               f'|  B  | {ranks[6][0]:.4f} | {ranks[6][1]:.4f} | {ranks[6][2]:.4f} | {ranks[6][3]:.4f} | {ranks[7][0]:.4f} | {ranks[7][1]:.4f} | {ranks[7][2]:.4f} | {ranks[7][3]:.4f} |\n')
+               f'|                A                  |                B                  |\n'
+               f'|  hr5   |  hr10  | ndcg10 |  mrr   |  hr5   |  hr10  | ndcg10 |  mrr   |\n'
+               f'| {ranks[0][0]:.4f} | {ranks[0][1]:.4f} | {ranks[0][2]:.4f} | {ranks[0][3]:.4f} | {ranks[1][0]:.4f} | {ranks[1][1]:.4f} | {ranks[1][2]:.4f} | {ranks[1][3]:.4f} |\n')
         self.log_msg(msg)
