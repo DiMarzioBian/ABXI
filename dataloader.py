@@ -18,6 +18,7 @@ class CDSRDataset(Dataset):
 
         self.idx_pad = 0
         self.n_neg = args.n_neg
+        self.n_neg_x2 = args.n_neg * 2
         self.n_mtc = args.n_mtc
         self.len_max = args.len_max
         self.len_trim = args.len_trim
@@ -106,12 +107,12 @@ class CDSRDataset(Dataset):
         pos = np.flip(np.cumsum(np.flip(mask))) * mask
         return pos
 
-    def get_seq_spe(self, seq, gt, mask_gt_a, mask_gt_b):
+    def get_seq_spe(self, seq, gt):
         A = seq[(0 < seq) & (seq <= self.n_item_a)]
         B = seq[seq > self.n_item_a]
 
-        seq_a = mask_gt_a.copy()
-        seq_b = mask_gt_b.copy()
+        seq_a = np.logical_and(0 < gt, gt <= self.n_item_a).astype(int)
+        seq_b = (gt > self.n_item_a).astype(int)
 
         # remove first interaction
         if seq[0] > self.n_item_a:  # B
@@ -144,13 +145,9 @@ class CDSRDataset(Dataset):
         seq_x = seq_raw[:-3]
         gt = seq_raw[1:-2]
 
-        mask_gt_a = np.logical_and(0 < gt, gt <= self.n_item_a).astype(int)
-        mask_gt_b = (gt > self.n_item_a).astype(int)
+        seq_a, seq_b = self.get_seq_spe(seq_x, gt)  # alignment
 
-        seq_a, seq_b = self.get_seq_spe(seq_x, gt, mask_gt_a, mask_gt_b)  # need re-order to fit the gt mask
-
-        seq_x, seq_a, seq_b, gt, mask_gt_a, mask_gt_b = \
-            (self.trim_seq(s) for s in (seq_x, seq_a, seq_b, gt, mask_gt_a, mask_gt_b))
+        seq_x, seq_a, seq_b, gt = (self.trim_seq(s) for s in (seq_x, seq_a, seq_b, gt))
 
         mask_x = (seq_x != 0).astype(int)
         mask_a = (seq_a != 0).astype(int)
@@ -160,21 +157,14 @@ class CDSRDataset(Dataset):
         pos_a = self.get_pos_idx(mask_a)
         pos_b = self.get_pos_idx(mask_b)
 
-        mask_x = np.expand_dims(mask_x, -1)
-        mask_a = np.expand_dims(mask_a, -1)
-        mask_b = np.expand_dims(mask_b, -1)
-
-        return idx_u, seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, mask_x, mask_a, mask_b, gt, mask_gt_a, mask_gt_b, seq_raw[:-2]
+        return idx_u, seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, gt, seq_raw[:-2]
 
     def process_valid(self, idx_u, seq_raw):
         idx_u = np.array(idx_u)
         seq_x = seq_raw[:-2]
         gt = np.expand_dims(seq_raw[-2], 0)
 
-        mask_gt_a = np.logical_and(0 < gt, gt <= self.n_item_a).astype(int)
-        mask_gt_b = (gt > self.n_item_a).astype(int)
-
-        seq_a = seq_x[(0 < seq_x) & (seq_x <= self.n_item_a)]  # in-sequence order can ignored
+        seq_a = seq_x[(0 < seq_x) & (seq_x <= self.n_item_a)]  # no need to align during evaluation
         seq_b = seq_x[seq_x > self.n_item_a]
 
         seq_x, seq_a, seq_b = (self.trim_seq(s) for s in (seq_x, seq_a, seq_b))
@@ -187,21 +177,14 @@ class CDSRDataset(Dataset):
         pos_a = self.get_pos_idx(mask_a)
         pos_b = self.get_pos_idx(mask_b)
 
-        mask_x = np.expand_dims(mask_x, -1)
-        mask_a = np.expand_dims(mask_a, -1)
-        mask_b = np.expand_dims(mask_b, -1)
-
-        return idx_u, seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, mask_x, mask_a, mask_b, gt, mask_gt_a, mask_gt_b, seq_raw[:-1]
+        return idx_u, seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, gt, seq_raw[:-1]
 
     def process_test(self, idx_u, seq_raw):
         idx_u = np.array(idx_u)
         seq_x = seq_raw[:-1]
         gt = np.expand_dims(seq_raw[-1], 0)
 
-        mask_gt_a = np.logical_and(0 < gt, gt <= self.n_item_a).astype(int)
-        mask_gt_b = (gt > self.n_item_a).astype(int)
-
-        seq_a = seq_x[(0 < seq_x) & (seq_x <= self.n_item_a)]  # in-sequence order can ignored
+        seq_a = seq_x[(0 < seq_x) & (seq_x <= self.n_item_a)]
         seq_b = seq_x[seq_x > self.n_item_a]
 
         seq_x, seq_a, seq_b = (self.trim_seq(s) for s in (seq_x, seq_a, seq_b))
@@ -214,53 +197,56 @@ class CDSRDataset(Dataset):
         pos_a = self.get_pos_idx(mask_a)
         pos_b = self.get_pos_idx(mask_b)
 
-        mask_x = np.expand_dims(mask_x, -1)
-        mask_a = np.expand_dims(mask_a, -1)
-        mask_b = np.expand_dims(mask_b, -1)
+        return idx_u, seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, gt, seq_raw
 
-        return idx_u, seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, mask_x, mask_a, mask_b, gt, mask_gt_a, mask_gt_b, seq_raw
+    def get_tr_neg(self, gt, seq_raw):
+        """
+        Get random negative samples from observed items in shared domain
+        Here we made a typo in the paper that we sample N_neg in-domain negatives, but we actually sample N-neg negatives
+        from each domain and then combine for loss calculation.
+        """
+        cand_a = self.idx_all_a[~np.isin(self.idx_all_a, seq_raw[seq_raw <= self.n_item_a], assume_unique=True)]
+        cand_b = self.idx_all_b[~np.isin(self.idx_all_b, seq_raw[seq_raw > self.n_item_a], assume_unique=True)]
 
-    def get_spe_neg(self, gt, n, seq_raw):
+        gt_neg = np.zeros((self.len_trim, self.n_neg_x2))
+
+        for i, x in enumerate(gt):
+            if x != 0:
+                gt_neg[i] = np.concatenate((np.random.default_rng().choice(cand_a, size=self.n_neg, replace=False),
+                                            np.random.default_rng().choice(cand_b, size=self.n_neg, replace=False)))
+
+        return gt_neg
+
+    def get_mtc_neg(self, gt, seq_raw):
         """ get random negative samples from observed items in specific domain """
-        if gt == 0:
-            return np.zeros(n, dtype=np.int32)
-
-        elif gt <= self.n_item_a:
-            gt_neg = np.random.choice(self.idx_all_a, n + len(seq_raw), replace=False)
-            gt_neg = gt_neg[~np.isin(gt_neg, seq_raw[seq_raw <= self.n_item_a])][:n]
-            return gt_neg
+        if gt <= self.n_item_a:
+            gt_mtc = np.random.default_rng().choice(
+                self.idx_all_a[~np.isin(self.idx_all_a, seq_raw[seq_raw <= self.n_item_a], assume_unique=True)],
+                size=self.n_mtc, replace=False)
 
         else:
-            gt_neg = np.random.choice(self.idx_all_b, n + len(seq_raw), replace=False)
-            gt_neg = gt_neg[~np.isin(gt_neg,  seq_raw[seq_raw > self.n_item_a])][:n]
-            return gt_neg
+            gt_mtc = np.random.default_rng().choice(
+                self.idx_all_b[~np.isin(self.idx_all_b, seq_raw[seq_raw > self.n_item_a], assume_unique=True)],
+                size=self.n_mtc, replace=False)
 
-    def get_crx_neg(self, gt, n, seq_raw):
-        """ get random negative samples from observed items in shared domain """
-        if gt == 0:
-            return np.zeros(n * 2, dtype=np.int32)
-        else:
-            gt_neg_a = np.random.choice(self.idx_all_a, n + len(seq_raw), replace=False)
-            gt_neg_a = gt_neg_a[~np.isin(gt_neg_a,  seq_raw)][:n]
-
-            gt_neg_b = np.random.choice(self.idx_all_b, n + len(seq_raw), replace=False)
-            gt_neg_b = gt_neg_b[~np.isin(gt_neg_b,  seq_raw)][:n]
-            return np.append(gt_neg_a, gt_neg_b)
+        return gt_mtc
 
     def __getitem__(self, index):
         if self.mode == 'train':
-            _, seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, mask_x, mask_a, mask_b, gt, mask_gt_a, mask_gt_b, seq_raw = self.data_tr[index]
-            gt_neg = np.array([self.get_crx_neg(idx, self.n_neg, seq_raw[:-2]) for idx in gt])
+            _, seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, gt, seq_raw = self.data_tr[index]
 
-            out = (seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, mask_x, mask_a, mask_b, gt, gt_neg, mask_gt_a, mask_gt_b)
+            gt_neg = self.get_tr_neg(gt, seq_raw)
+
+            out = (seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, gt, gt_neg)
 
         else:
             data = self.data_val if self.mode == 'valid' else self.data_te
 
-            _, seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, mask_x, mask_a, mask_b, gt, mask_gt_a, mask_gt_b, seq_raw = data[index]
-            gt_mtc = self.get_spe_neg(gt, self.n_mtc, seq_raw)
+            _, seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, gt, seq_raw = data[index]
 
-            out = (seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, mask_x, mask_a, mask_b, gt, gt_mtc, mask_gt_a, mask_gt_b)
+            gt_mtc = self.get_mtc_neg(gt, seq_raw)
+
+            out = (seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, gt, gt_mtc)
 
         return tuple(map(lambda x: torch.LongTensor(x), out))
 

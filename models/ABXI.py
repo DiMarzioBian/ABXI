@@ -21,23 +21,12 @@ class ABXI(torch.nn.Module):
         self.n_item_b = args.n_item_b
         self.n_neg = args.n_neg
         self.temp = args.temp
+        self.dropout = args.dropout
 
         self.d_embed = args.d_embed
         self.rd = args.rd
         self.ri = args.ri
 
-        self.v = args.v
-        # version control, v =
-        ## -4: ABXI-dp3, dLoRA -> projector'
-        ## -3: ABXI-i3, iLoRA -> projector'
-        ## -2: ABXI-i2, -proj_i, iLoRA -> projector'
-        ## -1: ABXI-e3, shared encoder + dLoRA -> 3 * encoder'
-        ## 0: ABXI'
-        ## 1: V1, -dLoRA'
-        ## 2: V2, -proj'
-        ## 3: V3, -iLoRA'
-        ## 4: V4, -dLoRA, -proj, -iLoRA'
-        ## 5 : V5, use timestamp-guided alignment'
 
         # item and positional embedding
         self.ei = nn.Embedding(self.n_item + 1, self.d_embed, padding_idx=0)
@@ -46,46 +35,23 @@ class ABXI(torch.nn.Module):
         # encoder, dlora
         self.mha = MultiHeadAttention(args)
         self.ffn = FeedForward(self.d_embed)
-        self.dropout = nn.Dropout(args.dropout)
 
-        if self.v == -1:
-            self.mha_a = MultiHeadAttention(args)
-            self.mha_b = MultiHeadAttention(args)
-
-            self.ffn_a = FeedForward(self.d_embed)
-            self.ffn_b = FeedForward(self.d_embed)
-
-        elif self.v not in (1, 4):
-            if self.v != -4:
-                self.dlora_x = LoRA(self.d_embed, self.rd)
-                self.dlora_a = LoRA(self.d_embed, self.rd)
-                self.dlora_b = LoRA(self.d_embed, self.rd)
-            else:
-                self.dlora_x = FeedForward(self.d_embed)
-                self.dlora_a = FeedForward(self.d_embed)
-                self.dlora_b = FeedForward(self.d_embed)
+        self.dlora_x = LoRA(self.d_embed, self.rd)
+        self.dlora_a = LoRA(self.d_embed, self.rd)
+        self.dlora_b = LoRA(self.d_embed, self.rd)
 
         self.norm_sa_x = nn.LayerNorm(self.d_embed)
         self.norm_sa_a = nn.LayerNorm(self.d_embed)
         self.norm_sa_b = nn.LayerNorm(self.d_embed)
 
         # ilora
-        if self.v in (-2, -3):
-            self.proj_x2a = FeedForward(self.d_embed)
-            self.proj_x2b = FeedForward(self.d_embed)
-
-            if self.v == -3:
-                self.proj_x2i = FeedForward(self.d_embed)
-
-        elif self.v not in (3, 4):
-            self.ilora_a = LoRA(self.d_embed, self.ri)
-            self.ilora_b = LoRA(self.d_embed, self.ri)
+        self.ilora_a = LoRA(self.d_embed, self.ri)
+        self.ilora_b = LoRA(self.d_embed, self.ri)
 
         # proj
-        if self.v not in (2, 4):
-            self.proj_i = FeedForward(self.d_embed)
-            self.proj_a = FeedForward(self.d_embed)
-            self.proj_b = FeedForward(self.d_embed)
+        self.proj_i = FeedForward(self.d_embed)
+        self.proj_a = FeedForward(self.d_embed)
+        self.proj_b = FeedForward(self.d_embed)
 
         self.norm_i2a = nn.LayerNorm(self.d_embed)
         self.norm_i2b = nn.LayerNorm(self.d_embed)
@@ -94,150 +60,80 @@ class ABXI(torch.nn.Module):
 
         self.apply(init_weights)
 
-    def forward(self, seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, mask_x, mask_a, mask_b, mask_gt_a, mask_gt_b):
+    def forward(self, seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, mask_gt_a, mask_gt_b):
+        # masking
+        mask_x = torch.where(pos_x != 0, 1, 0).unsqueeze(-1)
+        mask_a = torch.where(pos_a != 0, 1, 0).unsqueeze(-1)
+        mask_b = torch.where(pos_b != 0, 1, 0).unsqueeze(-1)
+
         # embedding
-        e_x = self.dropout((self.ei(seq_x) + self.ep(pos_x)) * mask_x)
-        e_a = self.dropout((self.ei(seq_a) + self.ep(pos_a)) * mask_a)
-        e_b = self.dropout((self.ei(seq_b) + self.ep(pos_b)) * mask_b)
+        h_x = (self.ei(seq_x) + self.ep(pos_x)) * mask_x
+        h_a = (self.ei(seq_a) + self.ep(pos_a)) * mask_a
+        h_b = (self.ei(seq_b) + self.ep(pos_b)) * mask_b
+
+        h_x = F.dropout(h_x, p=self.dropout, training=self.training)
+        h_a = F.dropout(h_a, p=self.dropout, training=self.training)
+        h_b = F.dropout(h_b, p=self.dropout, training=self.training)
 
         # mha
-        h_sa_x = self.mha(e_x, mask_x)
-        if self.v == -1:
-            h_sa_a = self.mha_a(e_a, mask_a)
-            h_sa_b = self.mha_b(e_b, mask_b)
-
-        else:
-            h_sa_a = self.mha(e_a, mask_a)
-            h_sa_b = self.mha(e_b, mask_b)
+        h_x = self.mha(h_x, mask_x)
+        h_a = self.mha(h_a, mask_a)
+        h_b = self.mha(h_b, mask_b)
 
         # switch training / evaluating
         if self.training:
             mask_gt_a = mask_gt_a.unsqueeze(-1)
             mask_gt_b = mask_gt_b.unsqueeze(-1)
+
         else:
             mask_x = mask_a = mask_b = 1
-            h_sa_x = h_sa_x[:, -1]
-            h_sa_a = h_sa_a[:, -1]
-            h_sa_b = h_sa_b[:, -1]
+            h_x = h_x[:, -1]
+            h_a = h_a[:, -1]
+            h_b = h_b[:, -1]
 
-        # ffn
-        if self.v in (1, 4):
-            h_sa_x = self.norm_sa_x(h_sa_x + self.dropout(self.ffn(h_sa_x))) * mask_x
-            h_sa_a = self.norm_sa_a(h_sa_a + self.dropout(self.ffn(h_sa_a))) * mask_a
-            h_sa_b = self.norm_sa_b(h_sa_b + self.dropout(self.ffn(h_sa_b))) * mask_b
+        # ffn + dlora
+        h_x = self.norm_sa_x(h_x +
+                             F.dropout(self.ffn(h_x), p=self.dropout, training=self.training) +
+                             F.dropout(self.dlora_x(h_x), p=self.dropout, training=self.training)
+                             ) * mask_x
 
-        elif self.v == -1:
-            h_sa_x = self.norm_sa_x(h_sa_x + self.dropout(self.ffn(h_sa_x))) * mask_x
-            h_sa_a = self.norm_sa_a(h_sa_a + self.dropout(self.ffn_a(h_sa_a))) * mask_a
-            h_sa_b = self.norm_sa_b(h_sa_b + self.dropout(self.ffn_b(h_sa_b))) * mask_b
+        h_a = self.norm_sa_a(h_a +
+                             F.dropout(self.ffn(h_a), p=self.dropout, training=self.training) +
+                             F.dropout(self.dlora_a(h_a), p=self.dropout, training=self.training)
+                             ) * mask_a
 
-        else:
-            h_sa_x = self.norm_sa_x(h_sa_x + self.dropout(self.ffn(h_sa_x)) + self.dropout(self.dlora_x(h_sa_x))) * mask_x
-            h_sa_a = self.norm_sa_a(h_sa_a + self.dropout(self.ffn(h_sa_a)) + self.dropout(self.dlora_a(h_sa_a))) * mask_a
-            h_sa_b = self.norm_sa_b(h_sa_b + self.dropout(self.ffn(h_sa_b)) + self.dropout(self.dlora_b(h_sa_b))) * mask_b
+        h_b = self.norm_sa_b(h_b +
+                             F.dropout(self.ffn(h_b), p=self.dropout, training=self.training) +
+                             F.dropout(self.dlora_b(h_b), p=self.dropout, training=self.training)
+                             ) * mask_b
 
         # proj, ilora
-        if self.v == 4:
-            h_a = self.norm_a2a(h_sa_x + h_sa_a)
-            h_b = self.norm_b2b(h_sa_x + h_sa_b)
+        h_i = self.proj_i(h_x)
 
-        elif self.v in (-4, -1, 0, 1, 5):
-            p_i = self.proj_i(h_sa_x)
+        h_a = (self.norm_i2a((h_x +
+                              F.dropout(h_i, p=self.dropout, training=self.training) +
+                              F.dropout(self.ilora_a(h_x), p=self.dropout, training=self.training)
+                              ) * mask_gt_a) +
+               self.norm_a2a((h_a +
+                              F.dropout(self.proj_a(h_a), p=self.dropout, training=self.training)
+                              ) * mask_gt_a))
 
-            h_i2a = self.norm_i2a((h_sa_x +
-                                   self.dropout(p_i) +
-                                   self.dropout(self.ilora_a(h_sa_x))) * mask_gt_a)
-
-            h_a2a = self.norm_a2a((h_sa_a +
-                                   self.dropout(self.proj_a(h_sa_a))) * mask_gt_a)
-
-            h_i2b = self.norm_i2b((h_sa_x +
-                                   self.dropout(p_i) +
-                                   self.dropout(self.ilora_b(h_sa_x))) * mask_gt_b)
-
-            h_b2b = self.norm_b2b((h_sa_b +
-                                   self.dropout(self.proj_b(h_sa_b))) * mask_gt_b)
-
-            h_a = h_i2a + h_a2a
-            h_b = h_i2b + h_b2b
-
-        elif self.v == 2:
-            h_i2a = self.norm_i2a((h_sa_x +
-                                   self.dropout(self.ilora_a(h_sa_x))) * mask_gt_a)
-
-            h_i2b = self.norm_i2b((h_sa_x +
-                                   self.dropout(self.ilora_b(h_sa_x))) * mask_gt_b)
-
-            h_a = h_i2a + h_sa_a
-            h_b = h_i2b + h_sa_b
-
-        elif self.v == 3:
-            p_i = self.proj_i(h_sa_x)
-
-            h_i2a = self.norm_i2a((h_sa_x +
-                                   self.dropout(p_i)) * mask_gt_a)
-
-            h_a2a = self.norm_a2a((h_sa_a +
-                                   self.dropout(self.proj_a(h_sa_a))) * mask_gt_a)
-
-            h_i2b = self.norm_i2b((h_sa_x +
-                                   self.dropout(p_i)) * mask_gt_b)
-
-            h_b2b = self.norm_b2b((h_sa_b +
-                                   self.dropout(self.proj_b(h_sa_b))) * mask_gt_b)
-
-            h_a = h_i2a + h_a2a
-            h_b = h_i2b + h_b2b
-
-        elif self.v == -2:
-            h_i2a = self.norm_i2a((h_sa_x +
-                                   self.dropout(self.proj_x2a(h_sa_x))) * mask_gt_a)
-
-            h_a2a = self.norm_a2a((h_sa_a +
-                                   self.dropout(self.proj_a(h_sa_a))) * mask_gt_a)
-
-            h_i2b = self.norm_i2b((h_sa_x +
-                                   self.dropout(self.proj_x2b(h_sa_x))) * mask_gt_b)
-
-            h_b2b = self.norm_b2b((h_sa_b +
-                                   self.dropout(self.proj_b(h_sa_b))) * mask_gt_b)
-
-            h_a = h_i2a + h_a2a
-            h_b = h_i2b + h_b2b
-
-        elif self.v == -3:
-            p_i = self.proj_x2i(h_sa_x)
-
-            h_i2a = self.norm_i2a((h_sa_x +
-                                   self.dropout(p_i) +
-                                   self.dropout(self.proj_x2a(h_sa_x))) * mask_gt_a)
-
-            h_a2a = self.norm_a2a((h_sa_a +
-                                   self.dropout(self.proj_a(h_sa_a))) * mask_gt_a)
-
-            h_i2b = self.norm_i2b((h_sa_x +
-                                   self.dropout(p_i) +
-                                   self.dropout(self.proj_x2b(h_sa_x))) * mask_gt_b)
-
-            h_b2b = self.norm_b2b((h_sa_b +
-                                   self.dropout(self.proj_b(h_sa_b))) * mask_gt_b)
-
-            h_a = h_i2a + h_a2a
-            h_b = h_i2b + h_b2b
-
-        else:
-            raise NotImplemented(f'Wrong v = {self.v}.')
+        h_b = (self.norm_i2b((h_x +
+                              F.dropout(h_i, p=self.dropout, training=self.training) +
+                              F.dropout(self.ilora_b(h_x), p=self.dropout, training=self.training)
+                              ) * mask_gt_b) +
+               self.norm_b2b((h_b +
+                              F.dropout(self.proj_b(h_b), p=self.dropout, training=self.training)
+                              ) * mask_gt_b))
 
         h = h_a * mask_gt_a + h_b * mask_gt_b
-        return h, h_sa_x, h_sa_a, h_sa_b
 
-    def cal_rec_loss(self, h, gt, gt_neg, mask_gt_a, mask_gt_b, emb_grad=True):
+        return h
+
+    def cal_rec_loss(self, h, gt, gt_neg, mask_gt_a, mask_gt_b):
         """ InfoNCE """
         e_gt = self.ei(gt)
         e_neg = self.ei(gt_neg)
-        if not emb_grad:
-            e_gt = e_gt.detach()
-            e_neg = e_neg.detach()
 
         logits = torch.cat(((h * e_gt).unsqueeze(-2).sum(-1),
                             (h.unsqueeze(-2) * e_neg).sum(-1)), dim=-1).div(self.temp)
@@ -259,7 +155,7 @@ class ABXI(torch.nn.Module):
 
         return ranks_a, ranks_b
 
-    def cal_rank(self, h_f, h_c, h_a, h_b, gt, gt_mtc, mask_gt_a, mask_gt_b):
+    def cal_rank(self, h_f, gt, gt_mtc, mask_gt_a, mask_gt_b):
         """ rank via inner-product similarity """
         mask_gt_a = mask_gt_a.squeeze(-1)
         mask_gt_b = mask_gt_b.squeeze(-1)
@@ -267,8 +163,5 @@ class ABXI(torch.nn.Module):
         e_gt, e_mtc = self.ei(gt),  self.ei(gt_mtc)
 
         ranks_f2a, ranks_f2b = self.cal_domain_rank(h_f, e_gt, e_mtc, mask_gt_a, mask_gt_b)
-        ranks_c2a, ranks_c2b = self.cal_domain_rank(h_c, e_gt, e_mtc, mask_gt_a, mask_gt_b)
-        ranks_a2a, ranks_a2b = self.cal_domain_rank(h_a, e_gt, e_mtc, mask_gt_a, mask_gt_b)
-        ranks_b2a, ranks_b2b = self.cal_domain_rank(h_b, e_gt, e_mtc, mask_gt_a, mask_gt_b)
 
-        return ranks_f2a, ranks_f2b, ranks_c2a, ranks_c2b, ranks_a2a, ranks_a2b, ranks_b2a, ranks_b2b
+        return ranks_f2a, ranks_f2b
