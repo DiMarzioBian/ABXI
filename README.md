@@ -17,7 +17,7 @@ Please check demo.sh on running on different datasets.
 
 ## 3. Citation
 
-If you found the codes are useful, please cite our paper.
+If you found the codes are useful, please leave a star on our repo and cite our paper.
 
     @inproceedings{bian2025abxi,
       title={ABXI: Invariant Interest Adaptation for Task-Guided Cross-Domain Sequential Recommendation},
