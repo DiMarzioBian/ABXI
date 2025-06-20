@@ -62,6 +62,3 @@ If you found the codes are useful, please leave a star on our repo and cite our 
         ├── metrics.py
         ├── misc.py
         ├── noter.py
-
-
-Because the files 'amb_50_seq.pkl' exceeds Github file size limit, you have to manually generate this preprocessed serialized data first, by adding argument '--raw' in the first experiment on Movie-Book dataset.
