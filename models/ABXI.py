@@ -4,10 +4,10 @@ import torch.nn.functional as F
 
 from models.encoders import MultiHeadAttention, FeedForward
 from models.layers import LoRA
-from models.indexing.position import get_absolute_pos_idx
+from models.utils.position import get_absolute_pos_idx
 
-from utils.metrics import cal_norm_mask
-from utils.misc import init_weights
+from models.data.evaluation import cal_norm_mask
+from models.utils.initialization import init_weights
 
 
 class ABXI(torch.nn.Module):

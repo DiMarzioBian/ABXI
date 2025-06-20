@@ -6,7 +6,7 @@ from torch.optim.lr_scheduler import LinearLR, ReduceLROnPlateau
 
 from models.data.dataloader import get_dataloader
 from models.ABXI import ABXI
-from utils.metrics import cal_metrics
+from models.data.evaluation import cal_metrics
 
 
 class Trainer(object):
@@ -91,10 +91,13 @@ class Trainer(object):
         return loss_a.item(), loss_b.item()
 
     def evaluate_batch(self, batch):
-        seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, gt, gt_mtc = map(lambda x: x.to(self.device), batch)
+        seq_x, gt, gt_mtc = map(lambda x: x.to(self.device), batch)
 
         mask_gt_a = torch.where(gt <= self.n_item_a, 1., 0.)
         mask_gt_b = torch.where(gt > self.n_item_a, 1., 0.)
+
+        seq_a = torch.where((seq_x > 0) | (seq_x <= self.n_item_a), seq_x, 0)
+        seq_b = torch.where(seq_x > self.n_item_a, seq_x, 0)
 
         h = self.model(seq_x, seq_a, seq_b, mask_gt_a, mask_gt_b)
 

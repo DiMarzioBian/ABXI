@@ -5,7 +5,7 @@ from os.path import join
 import numpy as np
 import torch
 
-from utils.noter import Noter
+from noter import Noter
 from trainer import Trainer
 
 
@@ -14,7 +14,7 @@ def main():
     parser.add_argument('--name', type=str, default='ABXI (WWW\'25)', help='name of the model')
     parser.add_argument('--ver', type=str, default='v1.0', help='final')
 
-    parser.add_argument('--data', type=str, default='amb', help='afk: Food-Kitchen'
+    parser.add_argument('--data', type=str, default='abe', help='afk: Food-Kitchen'
                                                                 'amb: Movie-Book'
                                                                 'abe: Beauty-Electronics')
     parser.add_argument('--len_max', type=int, default=50, help='# of interactions allowed to input')
@@ -38,7 +38,7 @@ def main():
     # Training
     parser.add_argument('--cuda', type=str, default='0', help='running device')
     parser.add_argument('--seed', type=int, default=3407, help='random seeding')
-    parser.add_argument('--bs', type=int, default=32, help='batch size')
+    parser.add_argument('--bs', type=int, default=256, help='batch size')
     parser.add_argument('--n_worker', type=int, default=0, help='# dataloader worker')
     parser.add_argument('--n_epoch', type=int, default=500, help='# epoch maximum')
     parser.add_argument('--n_warmup', type=int, default=10, help='# warmup epoch')
