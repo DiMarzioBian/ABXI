@@ -4,7 +4,10 @@ import torch.nn.functional as F
 
 
 class FeedForward(nn.Module):
-    """ SwiGLU-FFN """
+    """
+    SwiGLU-FFN
+    Require manual Post-norm residual connection.
+    """
     def __init__(self, d_embed, d_ffn=680):
         super().__init__()
         self.d_embed = d_embed
@@ -20,6 +23,9 @@ class FeedForward(nn.Module):
 
 
 class MultiHeadAttention(nn.Module):
+    """
+    Post-norm residual connection integrated.
+    """
     def __init__(self, args):
         super().__init__()
         self.mha = nn.MultiheadAttention(args.d_embed, args.n_head, batch_first=True)

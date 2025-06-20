@@ -12,7 +12,3 @@ class LoRA(nn.Module):
     def forward(self, h):
         h = F.linear(h, self.mat_A @ self.mat_B)
         return h
-
-    def get_lr(self, h):
-        h = F.linear(h, self.mat_A.T)
-        return h

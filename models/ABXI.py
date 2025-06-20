@@ -21,7 +21,7 @@ class ABXI(torch.nn.Module):
         self.n_item_b = args.n_item_b
         self.n_neg = args.n_neg
         self.temp = args.temp
-        self.dropout = args.dropout
+        self.dropout = nn.Dropout(p=args.dropout) if args.dropout  > 0. else nn.Identity()
 
         self.d_embed = args.d_embed
         self.rd = args.rd
@@ -71,9 +71,9 @@ class ABXI(torch.nn.Module):
         h_a = (self.ei(seq_a) + self.ep(pos_a)) * mask_a
         h_b = (self.ei(seq_b) + self.ep(pos_b)) * mask_b
 
-        h_x = F.dropout(h_x, p=self.dropout, training=self.training)
-        h_a = F.dropout(h_a, p=self.dropout, training=self.training)
-        h_b = F.dropout(h_b, p=self.dropout, training=self.training)
+        h_x = self.dropout(h_x)
+        h_a = self.dropout(h_a)
+        h_b = self.dropout(h_b)
 
         # mha
         h_x = self.mha(h_x, mask_x)
@@ -93,37 +93,37 @@ class ABXI(torch.nn.Module):
 
         # ffn + dlora
         h_x = self.norm_sa_x(h_x +
-                             F.dropout(self.ffn(h_x), p=self.dropout, training=self.training) +
-                             F.dropout(self.dlora_x(h_x), p=self.dropout, training=self.training)
+                             self.dropout(self.ffn(h_x)) +
+                             self.dropout(self.dlora_x(h_x))
                              ) * mask_x
 
         h_a = self.norm_sa_a(h_a +
-                             F.dropout(self.ffn(h_a), p=self.dropout, training=self.training) +
-                             F.dropout(self.dlora_a(h_a), p=self.dropout, training=self.training)
+                             self.dropout(self.ffn(h_a)) +
+                             self.dropout(self.dlora_a(h_a))
                              ) * mask_a
 
         h_b = self.norm_sa_b(h_b +
-                             F.dropout(self.ffn(h_b), p=self.dropout, training=self.training) +
-                             F.dropout(self.dlora_b(h_b), p=self.dropout, training=self.training)
+                             self.dropout(self.ffn(h_b)) +
+                             self.dropout(self.dlora_b(h_b))
                              ) * mask_b
 
         # proj, ilora
         h_i = self.proj_i(h_x)
 
         h_a = (self.norm_i2a((h_x +
-                              F.dropout(h_i, p=self.dropout, training=self.training) +
-                              F.dropout(self.ilora_a(h_x), p=self.dropout, training=self.training)
+                              self.dropout(h_i) +
+                              self.dropout(self.ilora_a(h_x))
                               ) * mask_gt_a) +
                self.norm_a2a((h_a +
-                              F.dropout(self.proj_a(h_a), p=self.dropout, training=self.training)
+                              self.dropout(self.proj_a(h_a))
                               ) * mask_gt_a))
 
         h_b = (self.norm_i2b((h_x +
-                              F.dropout(h_i, p=self.dropout, training=self.training) +
-                              F.dropout(self.ilora_b(h_x), p=self.dropout, training=self.training)
+                              self.dropout(h_i) +
+                              self.dropout(self.ilora_b(h_x))
                               ) * mask_gt_b) +
                self.norm_b2b((h_b +
-                              F.dropout(self.proj_b(h_b), p=self.dropout, training=self.training)
+                              self.dropout(self.proj_b(h_b))
                               ) * mask_gt_b))
 
         h = h_a * mask_gt_a + h_b * mask_gt_b
