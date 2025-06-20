@@ -24,7 +24,7 @@ def main():
     parser.add_argument('--ri', type=int, default=8, help='rank of invariant lora')
 
     # Data
-    parser.add_argument('--raw', action='store_false', help='use raw data from c2dsr, takes longer time')
+    parser.add_argument('--raw', action='store_true', help='use raw data from c2dsr, takes longer time')
     parser.add_argument('--n_neg', type=int, default=128, help='# negative inference samples')
     parser.add_argument('--n_mtc', type=int, default=999, help='# negative metric samples')
 
@@ -38,7 +38,7 @@ def main():
     # Training
     parser.add_argument('--cuda', type=str, default='0', help='running device')
     parser.add_argument('--seed', type=int, default=3407, help='random seeding')
-    parser.add_argument('--bs', type=int, default=256, help='batch size')
+    parser.add_argument('--bs', type=int, default=32, help='batch size')
     parser.add_argument('--n_worker', type=int, default=0, help='# dataloader worker')
     parser.add_argument('--n_epoch', type=int, default=500, help='# epoch maximum')
     parser.add_argument('--n_warmup', type=int, default=10, help='# warmup epoch')

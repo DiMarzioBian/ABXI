@@ -62,3 +62,7 @@ If you found the codes are useful, please leave a star on our repo and cite our 
         ├── metrics.py
         ├── misc.py
         ├── noter.py
+
+
+## 5. Update note (v2.1)
+Massive speed improvement and adjust project to more reasonable.

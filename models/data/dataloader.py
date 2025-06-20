@@ -1,3 +1,6 @@
+from typing import Tuple, List
+import argparse
+
 from os.path import join
 import numpy as np
 import pickle
@@ -8,12 +11,19 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 
 
-def trim_seq(seq, len_trim):
+def trim_seq(
+        seq: np.array,
+        len_trim: int,
+) -> np.array:
     """ pad sequences to required length """
     return np.concatenate((np.zeros(max(0, len_trim - len(seq)), dtype=np.int32), seq))[-len_trim:]
 
 
-def get_spe_seq(n_item_a, seq, gt):
+def get_spe_seq(
+        n_item_a: int,
+        seq: np.array,
+        gt: np.array,
+) -> Tuple[np.array, np.array]:
     """
     Through task-guided alignment.
     """
@@ -41,23 +51,32 @@ def get_spe_seq(n_item_a, seq, gt):
     return seq_a, seq_b
 
 
-def process_train(args, seq_raw):
+def process_train(
+        n_item_a: int,
+        len_trim: int,
+        seq_raw: List[int],
+) -> Tuple[np.array, np.array, np.array, np.array, List]:
     """ process training sequences """
     seq_x, gt = seq_raw[:-1], seq_raw[1:]
 
-    seq_a, seq_b = get_spe_seq(args.n_item_a, seq_x, gt)
+    seq_a, seq_b = get_spe_seq(n_item_a, seq_x, gt)
 
-    return *(trim_seq(x, args.len_trim) for x in (seq_x, seq_a, seq_b, gt)), seq_raw
+    return *(trim_seq(x, len_trim) for x in (seq_x, seq_a, seq_b, gt)), seq_raw
 
 
-def process_evaluate(args, seq_raw):
+def process_evaluate(
+        len_trim: int,
+        seq_raw: List[int],
+) -> Tuple[np.array, np.array, np.array, List]:
     """ process evaluation sequences """
     seq, gt = seq_raw[:-1], seq_raw[-1:]
 
-    return trim_seq(seq, args.len_trim), gt, seq_raw
+    return trim_seq(seq, len_trim), gt, seq_raw
 
 
-def get_dataset(args):
+def get_dataset(
+        args: argparse,
+) -> Tuple[Dataset, Dataset, Dataset]:
     """ get datasets """
     if args.raw:
         print('Reading raw data...')
@@ -82,9 +101,9 @@ def get_dataset(args):
         data_val = []
         data_te = []
         for seq in tqdm(data_seq, desc='processing', leave=False):
-            data_tr.append(process_train(args, seq[:-2]))
-            data_val.append(process_evaluate(args, seq[:-1]))
-            data_te.append(process_evaluate(args, seq))
+            data_tr.append(process_train(args.n_item_a, args.len_trim, seq[:-2]))
+            data_val.append(process_evaluate(args.len_trim, seq[:-1]))
+            data_te.append(process_evaluate(args.len_trim, seq))
 
         print('Saving serialized seqs...')
         with open(args.f_data, 'wb') as f:
@@ -106,7 +125,11 @@ def get_dataset(args):
 
 class TrainDataset(Dataset):
     """ training dataset """
-    def __init__(self, args, data):
+    def __init__(
+            self,
+            args: argparse,
+            data: List,
+    ) -> None:
         self.len_trim = args.len_trim
         self.n_neg = args.n_neg
         self.n_neg_x2 = args.n_neg * 2
@@ -131,7 +154,10 @@ class TrainDataset(Dataset):
     def __len__(self):
         return self.length
 
-    def __getitem__(self, index):
+    def __getitem__(
+            self,
+            index: int
+    ) -> Tuple[torch.Tenosr, torch.Tenosr, torch.Tenosr, torch.Tenosr, torch.Tenosr]:
         seq_x, seq_a, seq_b, gt, seq_raw = self.data[index]
 
         cand_a = self.idx_all_a[~np.isin(self.idx_all_a, seq_raw[seq_raw <= self.n_item_a], assume_unique=True)]
@@ -144,7 +170,11 @@ class TrainDataset(Dataset):
 
 class EvalDataset(Dataset):
     """ evaluation dataset """
-    def __init__(self, args, data):
+    def __init__(
+            self,
+            args: argparse,
+            data: List,
+    ) -> None:
         self.len_trim = args.len_trim
         self.n_item_a = args.n_item_a
         self.n_mtc = args.n_mtc
@@ -156,7 +186,11 @@ class EvalDataset(Dataset):
         self.idx_all_a = np.arange(1, args.n_item_a + 1)
         self.idx_all_b = np.arange(args.n_item_a, args.n_item + 1)
 
-    def get_mtc(self, gt, seq_raw):
+    def get_mtc(
+            self,
+            gt: List[int],
+            seq_raw: List[int],
+    ) -> np.array:
         if gt <= self.n_item_a:
             gt_mtc = np.random.default_rng().choice(
                 self.idx_all_a[~np.isin(self.idx_all_a, seq_raw[seq_raw <= self.n_item_a], assume_unique=True)],
@@ -172,7 +206,10 @@ class EvalDataset(Dataset):
     def __len__(self):
         return self.length
 
-    def __getitem__(self, index):
+    def __getitem__(
+            self,
+            index: int
+    ) -> Tuple[torch.Tenosr, torch.Tenosr, torch.Tenosr]:
         seq, gt, seq_raw = self.data[index]
 
         gt_mtc = self.get_mtc(gt, seq_raw)
@@ -180,7 +217,12 @@ class EvalDataset(Dataset):
         return tuple(map(lambda x: torch.LongTensor(x), (seq, gt, gt_mtc)))
 
 
-def get_dataloader(args):
+def get_dataloader(
+        args: argparse,
+) -> Tuple[DataLoader, DataLoader, DataLoader]:
+    """
+    Return loaders for training, evaluation and testing.
+    """
     train_set, valid_set, test_set = get_dataset(args)
     trainloader = DataLoader(train_set, batch_size=args.bs, shuffle=True, num_workers=args.n_worker, pin_memory=True)
     valloader = DataLoader(valid_set, batch_size=args.bse, shuffle=False, num_workers=args.n_worker, pin_memory=True)

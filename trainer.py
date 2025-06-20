@@ -1,3 +1,7 @@
+from typing import List
+import argparse
+from noter import Noter
+
 import time
 from tqdm import tqdm
 import torch
@@ -10,7 +14,9 @@ from models.data.evaluation import cal_metrics
 
 
 class Trainer(object):
-    def __init__(self, args, noter):
+    def __init__(self,
+                 args: argparse,
+                 noter: Noter):
         print('[info] Loading data')
         self.n_warmup = args.n_warmup
         self.trainloader, self.valloader, self.testloader = get_dataloader(args)
@@ -30,7 +36,8 @@ class Trainer(object):
 
         noter.log_num_param(self.model)
 
-    def run_epoch(self, i_epoch):
+    def run_epoch(self,
+                  i_epoch: int):
         self.model.train()
         loss_a, loss_b = 0., 0.
         t0 = time.time()
@@ -76,7 +83,8 @@ class Trainer(object):
 
         return *(cal_metrics(ranks) for ranks in res_ranks),
 
-    def train_batch(self, batch):
+    def train_batch(self,
+                    batch: List[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
         seq_x, seq_a, seq_b, gt, gt_neg = map(lambda x: x.to(self.device), batch)
 
         mask_gt_a = torch.where(gt <= self.n_item_a, 1., 0.)
@@ -90,7 +98,8 @@ class Trainer(object):
         self.optimizer.step()
         return loss_a.item(), loss_b.item()
 
-    def evaluate_batch(self, batch):
+    def evaluate_batch(self,
+                       batch: List[torch.Tensor, torch.Tensor, torch.Tensor]):
         seq_x, gt, gt_mtc = map(lambda x: x.to(self.device), batch)
 
         mask_gt_a = torch.where(gt <= self.n_item_a, 1., 0.)
