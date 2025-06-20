@@ -1,11 +1,10 @@
-from xml.dom import WrongDocumentErr
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from models.encoders import MultiHeadAttention, FeedForward
 from models.layers import LoRA
+from models.indexing.position import get_absolute_pos_idx
 
 from utils.metrics import cal_norm_mask
 from utils.misc import init_weights
@@ -60,16 +59,19 @@ class ABXI(torch.nn.Module):
 
         self.apply(init_weights)
 
-    def forward(self, seq_x, seq_a, seq_b, pos_x, pos_a, pos_b, mask_gt_a, mask_gt_b):
+    def embed_pos(self, mask):
+        return self.ep(get_absolute_pos_idx(mask))
+
+    def forward(self, seq_x, seq_a, seq_b, mask_gt_a, mask_gt_b):
         # masking
-        mask_x = torch.where(pos_x != 0, 1, 0).unsqueeze(-1)
-        mask_a = torch.where(pos_a != 0, 1, 0).unsqueeze(-1)
-        mask_b = torch.where(pos_b != 0, 1, 0).unsqueeze(-1)
+        mask_x = torch.where(seq_x != 0, 1., 0.).unsqueeze(-1)
+        mask_a = torch.where(seq_a != 0, 1., 0.).unsqueeze(-1)
+        mask_b = torch.where(seq_b != 0, 1., 0.).unsqueeze(-1)
 
         # embedding
-        h_x = (self.ei(seq_x) + self.ep(pos_x)) * mask_x
-        h_a = (self.ei(seq_a) + self.ep(pos_a)) * mask_a
-        h_b = (self.ei(seq_b) + self.ep(pos_b)) * mask_b
+        h_x = (self.ei(seq_x) + self.embed_pos(mask_x)) * mask_x
+        h_a = (self.ei(seq_a) + self.embed_pos(mask_a)) * mask_a
+        h_b = (self.ei(seq_b) + self.embed_pos(mask_b)) * mask_b
 
         h_x = self.dropout(h_x)
         h_a = self.dropout(h_a)
@@ -107,7 +109,7 @@ class ABXI(torch.nn.Module):
                              self.dropout(self.dlora_b(h_b))
                              ) * mask_b
 
-        # proj, ilora
+        # projector + ilora
         h_i = self.proj_i(h_x)
 
         h_a = (self.norm_i2a((h_x +

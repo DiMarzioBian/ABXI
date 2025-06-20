@@ -5,7 +5,7 @@ from os.path import join
 from tqdm import tqdm
 import json
 
-from mapper_raw_data import MAPPING_FILE_NAME
+from mapper_raw_data import MAPPING_FILE_NAME_AMAZON
 
 
 def read_amazon(path_a, path_b):
@@ -113,13 +113,13 @@ def reindex(df, df_a, df_b, list_u):
     return df, map_u, map_i
 
 
-def save(df, path, f_name, map_u, map_i):
+def save(df, len_max, path, f_name, map_u, map_i):
     """ filter out users/items with less than k interactions """
     print(f'\n[info] Saving files to {path} ...')
 
-    with open(join(path, 'map_user.txt'), 'w') as f:
+    with open(join(path, f'map_user_{len_max}.txt'), 'w') as f:
         json.dump(map_u, f)
-    with open(join(path, 'map_item.txt'), 'w') as f:
+    with open(join(path, f'map_item_{len_max}.txt'), 'w') as f:
         json.dump(map_i, f)
 
     with open(join(path, f_name), 'w') as f:
@@ -136,13 +136,13 @@ def main():
     parser = argparse.ArgumentParser(description='CDSR Leave-One-Out Preprocess Script')
 
     # Training
-    parser.add_argument('--data', type=str, default='abe', help='name of the dataset')
+    parser.add_argument('--data', type=str, default='afk', help='name of the dataset')
     parser.add_argument('--k_i', type=int, default=10, help='least interactions for each item in both domains')
     parser.add_argument('--k_u', type=int, default=5, help='least interactions for each user in each domain')
     parser.add_argument('--len_max', type=int, default=50, help='length threshold for each sequence')
     args = parser.parse_args()
 
-    (path_a, path_b) = MAPPING_FILE_NAME[args.data]
+    (path_a, path_b) = MAPPING_FILE_NAME_AMAZON[args.data]
     path_a = f'./raw/{path_a}'
     path_b = f'./raw/{path_b}'
     path_processed = f'./{args.data}/'
@@ -150,7 +150,7 @@ def main():
     if not os.path.exists(path_processed):
         os.makedirs(path_processed)
 
-    if args.data in MAPPING_FILE_NAME.keys():
+    if args.data in MAPPING_FILE_NAME_AMAZON.keys():
         print(f'\n[info] Start preprocessing "{args.data}" dataset...')
         df_a, df_b = read_amazon(path_a, path_b)
     else:
@@ -164,7 +164,7 @@ def main():
 
     df, map_u, map_i = reindex(df, df_a, df_b, list_u)
 
-    save(df, path_processed, f_processed, map_u, map_i)
+    save(df, args.len_max, path_processed, f_processed, map_u, map_i)
 
 
 if __name__ == '__main__':
