@@ -156,8 +156,8 @@ class TrainDataset(Dataset):
 
     def __getitem__(
             self,
-            index: int
-    ) -> Tuple[torch.Tenosr, torch.Tenosr, torch.Tenosr, torch.Tenosr, torch.Tenosr]:
+            index: int,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         seq_x, seq_a, seq_b, gt, seq_raw = self.data[index]
 
         cand_a = self.idx_all_a[~np.isin(self.idx_all_a, seq_raw[seq_raw <= self.n_item_a], assume_unique=True)]
@@ -208,8 +208,8 @@ class EvalDataset(Dataset):
 
     def __getitem__(
             self,
-            index: int
-    ) -> Tuple[torch.Tenosr, torch.Tenosr, torch.Tenosr]:
+            index: int,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         seq, gt, seq_raw = self.data[index]
 
         gt_mtc = self.get_mtc(gt, seq_raw)

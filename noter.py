@@ -43,7 +43,7 @@ class Noter(object):
 
     def log_num_param(
             self,
-            model: nn.Modulem,
+            model: nn.Module,
     ) -> None:
         self.log_msg(f'[info] model contains {sum(p.numel() for p in model.parameters() if p.requires_grad)} '
                      f'learnable parameters.\n')

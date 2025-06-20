@@ -13,7 +13,7 @@ class FeedForward(nn.Module):
     def __init__(
             self,
             d_embed: int,
-            d_ffn: int =680
+            d_ffn: int = 680,
     ) -> None:
         super().__init__()
         self.d_embed = d_embed
@@ -25,7 +25,7 @@ class FeedForward(nn.Module):
 
     def forward(
             self,
-            h: torch.Tensor
+            h: torch.Tensor,
     ) -> torch.Tensor:
         h = self.fc_3(F.silu(self.fc_2(h)) * self.fc_1(h))
         return h
@@ -37,7 +37,7 @@ class MultiHeadAttention(nn.Module):
     """
     def __init__(
             self,
-            args: argparse
+            args: argparse,
     ) -> None:
         super().__init__()
         self.mha = nn.MultiheadAttention(args.d_embed, args.n_head, batch_first=True)

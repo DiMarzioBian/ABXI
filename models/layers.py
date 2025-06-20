@@ -7,7 +7,7 @@ class LoRA(nn.Module):
     def __init__(
             self,
             d_embed: torch.Tensor,
-            rank: int =16,
+            rank: int = 16,
     ) -> None:
         super().__init__()
         self.mat_A = nn.Parameter(torch.randn(d_embed, rank) / 50)  # match the scale in initialization.py

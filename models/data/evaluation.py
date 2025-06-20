@@ -4,14 +4,14 @@ import torch
 
 
 def cal_norm_mask(
-        mask: torch.Tensor
+        mask: torch.Tensor,
 ) -> torch.Tensor:
     """ calculate normalized mask """
     return mask * mask.sum(1).reciprocal().unsqueeze(-1).nan_to_num(posinf=0.0)
 
 
 def cal_metrics(
-        ranks: list
+        ranks: list,
 ) -> list:
     """ calculate metrics hr@5, hr@5, ndcg@10 and mrr """
     N = len(ranks)

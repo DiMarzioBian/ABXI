@@ -32,37 +32,39 @@ If you found the codes are useful, please leave a star on our repo and cite our 
 
     ABXI/
     ├── data/
-    │   ├── prepare_amazon.py
-    │   ├── mapper_raw_file.py
     │   ├── abe/
     │   │   ├── abe_50_preprocessed.txt
     │   │   ├── abe_50_seq.pkl
-    │   │   ├── map_item.txt
-    │   │   └── map_user.txt
+    │   │   ├── map_item_50.txt
+    │   │   └── map_user_50.txt
     │   ├── afk/
     │   │   ├── afk_50_preprocessed.txt
     │   │   ├── afk_50_seq.pkl
-    │   │   ├── map_item.txt
-    │   │   └── map_user.txt
-    │   └── amb/
-    │       ├── amb_50_preprocessed.txt
-    │       ├── map_item.txt
-    │       └── map_user.txt
-    ├── dataloader.py
-    ├── demo.sh
-    ├── main.py
+    │   │   ├── map_item_50.txt
+    │   │   └── map_user_50.txt
+    │   ├── amb/
+    │   │   ├── amb_50_preprocessed.txt
+    │   │   ├── amb_50_seq.pkl
+    │   │   ├── map_item_50.txt
+    │   │   └── map_user_50.txt
+    │   ├── mapper_raw_file.py
+    │   └── prepare_amazon.py
     ├── models/
-    │   ├── ABXI.py
+    │   ├── data/
+    │   │   ├── datalaoder.py
+    │   │   └── evaluation.py
+    │   ├── utils/
+    │   │   ├── initialization.py
+    │   │   └── position.py
+    │   ├── ABXI.py/
     │   ├── encoders.py
     │   └── layers.py
+    ├── demo.sh
+    ├── main.py
+    ├── noter.py
     ├── README.md
     ├── requirements.txt
-    ├── trainer.py
-    └── utils/
-        ├── metrics.py
-        ├── misc.py
-        ├── noter.py
-
+    └── trainer.py
 
 ## 5. Update note (v2.1)
-Massive speed improvement and adjust project to more reasonable.
+Major performance boost and restructured project for improved maintainability.

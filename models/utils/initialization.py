@@ -2,7 +2,7 @@ import torch.nn as nn
 
 
 def init_weights(
-        model: nn.Module
+        model: nn.Module,
 ) -> None:
     for m in model.modules():
         if isinstance(m, nn.Linear):
