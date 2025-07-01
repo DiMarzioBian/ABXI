@@ -67,4 +67,4 @@ If you found the codes are useful, please leave a star on our repo and cite our 
     └── trainer.py
 
 ## 5. Update note (v2.1)
-Major performance boost and restructured project for improved maintainability.
+Major efficiency boost and restructured project for improved maintainability (compared with v1.0).
