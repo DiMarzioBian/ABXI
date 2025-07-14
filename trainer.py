@@ -112,7 +112,7 @@ class Trainer(object):
         mask_gt_a = torch.where(gt <= self.n_item_a, 1., 0.)
         mask_gt_b = torch.where(gt > self.n_item_a, 1., 0.)
 
-        seq_a = torch.where((seq_x > 0) | (seq_x <= self.n_item_a), seq_x, 0)
+        seq_a = torch.where((seq_x > 0) & (seq_x <= self.n_item_a), seq_x, 0)
         seq_b = torch.where(seq_x > self.n_item_a, seq_x, 0)
 
         h = self.model(seq_x, seq_a, seq_b, mask_gt_a, mask_gt_b)
