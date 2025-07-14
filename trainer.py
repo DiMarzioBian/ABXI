@@ -63,8 +63,7 @@ class Trainer(object):
 
         # validating
         self.model.eval()
-        ranks_f2a, ranks_f2b, ranks_c2a, ranks_c2b, ranks_a2a, ranks_a2b, ranks_b2a, ranks_b2b \
-            = [], [], [], [], [], [], [], []
+        ranks_f2a, ranks_f2b = [], []
 
         with torch.no_grad():
             for batch in tqdm(self.valloader, desc='validating', leave=False):
