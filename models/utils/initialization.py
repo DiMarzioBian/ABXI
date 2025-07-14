@@ -1,9 +1,8 @@
 import torch.nn as nn
 
 
-def init_weights(
-        model: nn.Module,
-) -> None:
+def init_weights(model: nn.Module,
+                 ) -> None:
     for m in model.modules():
         if isinstance(m, nn.Linear):
             nn.init.normal_(m.weight.data, mean=0.0, std=0.02)

@@ -1,9 +1,8 @@
 import torch
 
 
-def get_absolute_pos_idx(
-        mask: torch.DoubleTensor,
-) -> torch.LongTensor:
+def get_absolute_pos_idx(mask: torch.DoubleTensor,
+                         ) -> torch.LongTensor:
     """
     Generate position index, default ignoring padding and masking index 0.
     Input mask is non-padded mask

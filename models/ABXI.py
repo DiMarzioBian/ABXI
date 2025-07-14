@@ -14,10 +14,9 @@ from models.utils.initialization import init_weights
 
 
 class ABXI(nn.Module):
-    def __init__(
-            self,
-            args: argparse,
-    ) -> None:
+    def __init__(self,
+                 args: argparse,
+                 ) -> None:
         super().__init__()
         self.bs = args.bs
         self.len_trim = args.len_trim
@@ -65,20 +64,18 @@ class ABXI(nn.Module):
 
         self.apply(init_weights)
 
-    def embed_pos(
-            self,
-            mask: torch.Tensor,
-    ) -> torch.Tensor:
+    def embed_pos(self,
+                  mask: torch.Tensor,
+                  ) -> torch.Tensor:
         return self.ep(get_absolute_pos_idx(mask))
 
-    def forward(
-            self,
-            seq_x: torch.Tensor,
-            seq_a: torch.Tensor,
-            seq_b: torch.Tensor,
-            mask_gt_a: torch.Tensor,
-            mask_gt_b: torch.Tensor,
-    ) -> torch.Tensor:
+    def forward(self,
+                seq_x: torch.Tensor,
+                seq_a: torch.Tensor,
+                seq_b: torch.Tensor,
+                mask_gt_a: torch.Tensor,
+                mask_gt_b: torch.Tensor,
+                ) -> torch.Tensor:
         # masking
         mask_x = torch.where(seq_x != 0, 1., 0.).unsqueeze(-1)
         mask_a = torch.where(seq_a != 0, 1., 0.).unsqueeze(-1)
@@ -154,7 +151,7 @@ class ABXI(nn.Module):
                      gt_neg: torch.Tensor,
                      mask_gt_a: torch.Tensor,
                      mask_gt_b: torch.Tensor,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+                     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """ InfoNCE """
         e_gt = self.ei(gt)
         e_neg = self.ei(gt_neg)
@@ -167,14 +164,13 @@ class ABXI(nn.Module):
         loss_b = (loss * cal_norm_mask(mask_gt_b)).sum(-1).mean()
         return loss_a, loss_b
 
-    def cal_domain_rank(
-            self,
-            h: torch.Tensor,
-            e_gt: torch.Tensor,
-            e_mtc: torch.Tensor,
-            mask_gt_a: torch.Tensor,
-            mask_gt_b: torch.Tensor,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    def cal_domain_rank(self,
+                        h: torch.Tensor,
+                        e_gt: torch.Tensor,
+                        e_mtc: torch.Tensor,
+                        mask_gt_a: torch.Tensor,
+                        mask_gt_b: torch.Tensor,
+                        ) -> Tuple[torch.Tensor, torch.Tensor]:
         """ calculate domain rank via inner-product similarity """
         logit_gt = (h * e_gt.squeeze(1)).sum(-1, keepdims=True)
         logit_mtc = (h.unsqueeze(1) * e_mtc).sum(-1)
@@ -185,14 +181,13 @@ class ABXI(nn.Module):
 
         return ranks_a, ranks_b
 
-    def cal_rank(
-            self,
-            h_f: torch.Tensor,
-            gt: torch.Tensor,
-            gt_mtc: torch.Tensor,
-            mask_gt_a: torch.Tensor,
-            mask_gt_b: torch.Tensor,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    def cal_rank(self,
+                 h_f: torch.Tensor,
+                 gt: torch.Tensor,
+                 gt_mtc: torch.Tensor,
+                 mask_gt_a: torch.Tensor,
+                 mask_gt_b: torch.Tensor,
+                 ) -> Tuple[torch.Tensor, torch.Tensor]:
         """ rank via inner-product similarity """
         mask_gt_a = mask_gt_a.squeeze(-1)
         mask_gt_b = mask_gt_b.squeeze(-1)

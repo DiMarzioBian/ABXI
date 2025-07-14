@@ -14,11 +14,10 @@ from models.data.evaluation import cal_metrics
 
 
 class Trainer(object):
-    def __init__(
-            self,
-            args: argparse,
-            noter: Noter,
-    ) -> None:
+    def __init__(self,
+                 args: argparse,
+                 noter: Noter,
+                 ) -> None:
         print('[info] Loading data')
         self.n_warmup = args.n_warmup
         self.trainloader, self.valloader, self.testloader = get_dataloader(args)
@@ -38,10 +37,9 @@ class Trainer(object):
 
         noter.log_num_param(self.model)
 
-    def run_epoch(
-            self,
-            i_epoch: int,
-    ) -> Tuple[Optional[List], Optional[List]]:
+    def run_epoch(self,
+                  i_epoch: int,
+                  ) -> Tuple[Optional[List], Optional[List]]:
         self.model.train()
         loss_a, loss_b = 0., 0.
         t0 = time.time()
@@ -74,7 +72,7 @@ class Trainer(object):
 
         return cal_metrics(ranks_f2a), cal_metrics(ranks_f2b)
 
-    def run_test(self):
+    def run_test(self) -> Tuple[Tuple[float], Tuple[float]]:
         self.model.eval()
         res_ranks = [[], []]
 
@@ -86,10 +84,9 @@ class Trainer(object):
 
         return *(cal_metrics(ranks) for ranks in res_ranks),
 
-    def train_batch(
-            self,
-            batch: List[torch.Tensor],
-    ) -> Tuple[float, float]:
+    def train_batch(self,
+                    batch: List[torch.Tensor],
+                    ) -> Tuple[float, float]:
         seq_x, seq_a, seq_b, gt, gt_neg = map(lambda x: x.to(self.device), batch)
 
         mask_gt_a = torch.where(gt <= self.n_item_a, 1., 0.)
@@ -103,10 +100,9 @@ class Trainer(object):
         self.optimizer.step()
         return loss_a.item(), loss_b.item()
 
-    def evaluate_batch(
-            self,
-            batch: List[torch.Tensor],
-    ) -> Tuple[List, List]:
+    def evaluate_batch(self,
+                       batch: List[torch.Tensor],
+                       ) -> Tuple[List, List]:
         seq_x, gt, gt_mtc = map(lambda x: x.to(self.device), batch)
 
         mask_gt_a = torch.where(gt <= self.n_item_a, 1., 0.)

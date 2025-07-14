@@ -13,7 +13,7 @@ class Noter(object):
     def __init__(
             self,
             args: argparse,
-    ) -> None:
+            ) -> None:
         self.args = args
 
         self.t_start = time.time()
@@ -30,25 +30,25 @@ class Noter(object):
     def write(
             self,
             msg: str,
-    ) -> None:
+            ) -> None:
         with open(self.f_log, 'a') as out:
             print(msg, file=out)
 
     def log_msg(
             self,
             msg: str,
-    ) -> None:
+            ) -> None:
         print(msg)
         self.write(msg)
 
     def log_num_param(
             self,
             model: nn.Module,
-    ) -> None:
+            ) -> None:
         self.log_msg(f'[info] model contains {sum(p.numel() for p in model.parameters() if p.requires_grad)} '
                      f'learnable parameters.\n')
 
-    def log_settings(self):
+    def log_settings(self) -> None:
         msg = (f'[Info] {self.args.name} (data:{self.args.data}, cuda:{self.args.cuda})\n'
                f'| Ver.  {self.args.ver} |\n'
                f'| len_max {self.args.len_max} | d_embed {self.args.d_embed} |'
@@ -61,7 +61,7 @@ class Noter(object):
     def log_lr(
             self,
             msg: str,
-    ) -> None:
+            ) -> None:
         msg = f'           | lr  |     ' + msg
         self.log_msg(msg)
 
@@ -71,7 +71,7 @@ class Noter(object):
             loss_a: float,
             loss_b: float,
             t_gap: float,
-    ) -> None:
+            ) -> None:
         msg = f'-epoch {i_epoch:>3} | tr  | los | {f"{loss_a:.4f}"[:6]} | {f"{loss_b:.4f}"[:6]} | {t_gap:>5.1f}s |'
         self.log_msg(msg)
 
@@ -79,21 +79,21 @@ class Noter(object):
             self,
             res_a: List[float],
             res_b: List[float],
-    ) -> None:
+            ) -> None:
         msg = f'           | val |     | {res_a[0]:.4f} | {res_a[1]:.4f} | {res_a[2]:.4f} | {res_a[3]:.4f} | {res_b[0]:.4f} | {res_b[1]:.4f} | {res_b[2]:.4f} | {res_b[3]:.4f} |'
         self.log_msg(msg)
 
     def log_test(
             self,
             ranks: List[List[float]],
-    ) -> None:
+            ) -> None:
         msg = f'           | te  |  *  | {ranks[0][0]:.4f} | {ranks[0][1]:.4f} | {ranks[0][2]:.4f} | {ranks[0][3]:.4f} | {ranks[1][0]:.4f} | {ranks[1][1]:.4f} | {ranks[1][2]:.4f} | {ranks[1][3]:.4f} |  *  |'
         self.log_msg(msg)
 
     def log_final(
             self,
             ranks: List[List[float]],
-    ) -> None:
+            ) -> None:
         self.log_msg(f'\n{"-" * 10} Experiment ended {"-" * 10}')
         self.log_settings()
         msg = (f'[ Info ] {self.args.name} ({(time.time() - self.t_start) / 60:.1f} min)\n'
@@ -105,7 +105,7 @@ class Noter(object):
     def log_final_result(
             self,
             ranks: List[List[float]],
-    ) -> None:
+            ) -> None:
         self.log_msg(f'\n{"-" * 10} Experiment ended {"-" * 10}')
         self.log_settings()
         msg = (f'[ Info ] {self.args.name} ({(time.time() - self.t_start) / 60:.1f} min)\n'
