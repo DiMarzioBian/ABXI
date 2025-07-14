@@ -163,7 +163,7 @@ def main() -> None:
     parser.add_argument('--len_max', type=int, default=50, help='length threshold for each sequence')
     args = parser.parse_args()
 
-    (path_a, path_b) = MAPPING_FILE_NAME[args.data]
+    (path_a, path_b) = MAPPING_FILE_NAME_AMAZON[args.data]
     path_a = f'./raw/{path_a}'
     path_b = f'./raw/{path_b}'
     path_processed = f'./{args.data}/'
@@ -171,7 +171,7 @@ def main() -> None:
     if not os.path.exists(path_processed):
         os.makedirs(path_processed)
 
-    if args.data in MAPPING_FILE_NAME.keys():
+    if args.data in MAPPING_FILE_NAME_AMAZON.keys():
         print(f'\n[info] Start preprocessing "{args.data}" dataset...')
         df_a, df_b = read_amazon(path_a, path_b)
     else:
