@@ -68,8 +68,8 @@ class Noter(object):
     def log_train(
             self,
             i_epoch: int,
-            loss_a: List[float],
-            loss_b: List[float],
+            loss_a: float,
+            loss_b: float,
             t_gap: float,
     ) -> None:
         msg = f'-epoch {i_epoch:>3} | tr  | los | {f"{loss_a:.4f}"[:6]} | {f"{loss_b:.4f}"[:6]} | {t_gap:>5.1f}s |'
@@ -77,22 +77,22 @@ class Noter(object):
 
     def log_valid(
             self,
-            res_a: List,
-            res_b: List,
+            res_a: List[float],
+            res_b: List[float],
     ) -> None:
         msg = f'           | val |     | {res_a[0]:.4f} | {res_a[1]:.4f} | {res_a[2]:.4f} | {res_a[3]:.4f} | {res_b[0]:.4f} | {res_b[1]:.4f} | {res_b[2]:.4f} | {res_b[3]:.4f} |'
         self.log_msg(msg)
 
     def log_test(
             self,
-            ranks: List,
+            ranks: List[List[float]],
     ) -> None:
         msg = f'           | te  |  *  | {ranks[0][0]:.4f} | {ranks[0][1]:.4f} | {ranks[0][2]:.4f} | {ranks[0][3]:.4f} | {ranks[1][0]:.4f} | {ranks[1][1]:.4f} | {ranks[1][2]:.4f} | {ranks[1][3]:.4f} |  *  |'
         self.log_msg(msg)
 
     def log_final(
             self,
-            ranks: List,
+            ranks: List[List[float]],
     ) -> None:
         self.log_msg(f'\n{"-" * 10} Experiment ended {"-" * 10}')
         self.log_settings()
@@ -104,7 +104,7 @@ class Noter(object):
 
     def log_final_result(
             self,
-            ranks: List,
+            ranks: List[List[float]],
     ) -> None:
         self.log_msg(f'\n{"-" * 10} Experiment ended {"-" * 10}')
         self.log_settings()
