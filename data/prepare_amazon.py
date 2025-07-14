@@ -7,7 +7,7 @@ from os.path import join
 from tqdm import tqdm
 import json
 
-from mapper_raw_file import MAPPING_FILE_NAME
+from mapper_raw_file import MAPPING_FILE_NAME_AMAZON
 
 
 def read_amazon(path_a: list,
