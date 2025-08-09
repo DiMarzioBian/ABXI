@@ -78,9 +78,8 @@ class Trainer(object):
 
         with torch.no_grad():
             for batch in tqdm(self.testloader, desc='testing', leave=False):
-                ranks_batch = self.evaluate_batch(batch)
-
-            res_ranks = [res_set + res for res_set, res in zip(res_ranks, ranks_batch)]
+                ranks_batch = self.evaluate_batch(False):
+                res_ranks = [res + res_new for res, res_new in zip(res_ranks, ranks_batch)]
 
         return *(cal_metrics(ranks) for ranks in res_ranks),
 
