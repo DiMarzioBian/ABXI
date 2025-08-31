@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 class LoRA(nn.Module):
     def __init__(self,
-                 d_embed: torch.Tensor,
+                 d_embed: int,
                  rank: int = 16,
                  ) -> None:
         super().__init__()

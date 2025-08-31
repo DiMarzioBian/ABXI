@@ -1,4 +1,4 @@
-import argparse
+from argparse import Namespace
 
 import torch
 import torch.nn as nn
@@ -34,7 +34,7 @@ class MultiHeadAttention(nn.Module):
     Post-norm residual connection integrated.
     """
     def __init__(self,
-                 args: argparse,
+                 args: Namespace,
                  ) -> None:
         super().__init__()
         self.mha = nn.MultiheadAttention(args.d_embed, args.n_head, batch_first=True)

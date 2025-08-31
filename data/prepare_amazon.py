@@ -7,11 +7,15 @@ from os.path import join
 from tqdm import tqdm
 import json
 
-from mapper_raw_file import MAPPER_FILE_NAME_AMAZON
 
+MAPPING_FILE_NAME_AMAZON = {
+    'afk': ('ratings_Grocery_and_Gourmet_Food.csv', 'ratings_Home_and_Kitchen.csv'),
+    'abe': ('ratings_Beauty.csv', 'ratings_Electronics.csv'),
+    'amb': ('ratings_Movies_and_TV.csv', 'ratings_Books.csv'),
+}
 
-def read_amazon(path_a: list,
-                path_b: list,
+def read_amazon(path_a: str,
+                path_b: str,
                 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     df_a = pd.read_csv(path_a, sep=',', header=None, names=['user', 'item', 'rating', 'ts']).drop(columns=['rating'])
     df_b = pd.read_csv(path_b, sep=',', header=None, names=['user', 'item', 'rating', 'ts']).drop(columns=['rating'])

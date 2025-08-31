@@ -1,5 +1,4 @@
-from typing import Tuple
-import argparse
+from argparse import Namespace
 
 import torch
 import torch.nn as nn
@@ -15,7 +14,7 @@ from models.utils.initialization import init_weights
 
 class ABXI(nn.Module):
     def __init__(self,
-                 args: argparse,
+                 args: Namespace,
                  ) -> None:
         super().__init__()
         self.bs = args.bs
@@ -34,7 +33,7 @@ class ABXI(nn.Module):
 
         # item and positional embedding
         self.ei = nn.Embedding(self.n_item + 1, self.d_embed, padding_idx=0)
-        self.ep = nn.Embedding(self.len_trim + 1, args.d_embed, padding_idx=0)
+        self.ep = nn.Embedding(self.len_trim + 1, self.d_embed, padding_idx=0)
 
         # encoder, dlora
         self.mha = MultiHeadAttention(args)
@@ -73,13 +72,12 @@ class ABXI(nn.Module):
                 seq_x: torch.Tensor,
                 seq_a: torch.Tensor,
                 seq_b: torch.Tensor,
+                mask_x: torch.Tensor,
+                mask_a: torch.Tensor,
+                mask_b: torch.Tensor,
                 mask_gt_a: torch.Tensor,
                 mask_gt_b: torch.Tensor,
                 ) -> torch.Tensor:
-        # masking
-        mask_x = torch.where(seq_x != 0, 1., 0.).unsqueeze(-1)
-        mask_a = torch.where(seq_a != 0, 1., 0.).unsqueeze(-1)
-        mask_b = torch.where(seq_b != 0, 1., 0.).unsqueeze(-1)
 
         # embedding
         h_x = (self.ei(seq_x) + self.embed_pos(mask_x)) * mask_x
@@ -151,7 +149,7 @@ class ABXI(nn.Module):
                      gt_neg: torch.Tensor,
                      mask_gt_a: torch.Tensor,
                      mask_gt_b: torch.Tensor,
-                     ) -> Tuple[torch.Tensor, torch.Tensor]:
+                     ) -> tuple[torch.Tensor, torch.Tensor]:
         """ InfoNCE """
         e_gt = self.ei(gt)
         e_neg = self.ei(gt_neg)
@@ -164,15 +162,15 @@ class ABXI(nn.Module):
         loss_b = (loss * cal_norm_mask(mask_gt_b)).sum(-1).mean()
         return loss_a, loss_b
 
-    def cal_domain_rank(self,
-                        h: torch.Tensor,
+    @staticmethod
+    def cal_domain_rank(h: torch.Tensor,
                         e_gt: torch.Tensor,
                         e_mtc: torch.Tensor,
                         mask_gt_a: torch.Tensor,
                         mask_gt_b: torch.Tensor,
-                        ) -> Tuple[torch.Tensor, torch.Tensor]:
+                        ) -> tuple[list[float], list[float]]:
         """ calculate domain rank via inner-product similarity """
-        logit_gt = (h * e_gt.squeeze(1)).sum(-1, keepdims=True)
+        logit_gt = (h * e_gt.squeeze(1)).sum(dim=-1, keepdims=True)
         logit_mtc = (h.unsqueeze(1) * e_mtc).sum(-1)
 
         ranks = (logit_mtc - logit_gt).gt(0).sum(-1).add(1)
@@ -187,7 +185,7 @@ class ABXI(nn.Module):
                  gt_mtc: torch.Tensor,
                  mask_gt_a: torch.Tensor,
                  mask_gt_b: torch.Tensor,
-                 ) -> Tuple[torch.Tensor, torch.Tensor]:
+                 ) -> tuple[list[float], list[float]]:
         """ rank via inner-product similarity """
         mask_gt_a = mask_gt_a.squeeze(-1)
         mask_gt_b = mask_gt_b.squeeze(-1)

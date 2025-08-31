@@ -14,7 +14,7 @@ def main() -> None:
     parser.add_argument('--name', type=str, default='ABXI (WWW\'25)', help='name of the model')
     parser.add_argument('--ver', type=str, default='v1.0', help='final')
 
-    parser.add_argument('--data', type=str, default='abe', help='afk: Food-Kitchen'
+    parser.add_argument('--data', type=str, default='amb', help='afk: Food-Kitchen'
                                                                 'amb: Movie-Book'
                                                                 'abe: Beauty-Electronics')
     parser.add_argument('--len_max', type=int, default=50, help='# of interactions allowed to input')
@@ -24,7 +24,7 @@ def main() -> None:
     parser.add_argument('--ri', type=int, default=8, help='rank of invariant lora')
 
     # Data
-    parser.add_argument('--raw', action='store_true', help='use raw data from c2dsr, takes longer time')
+    parser.add_argument('--raw', action='store_false', help='use raw data from c2dsr, takes longer time')
     parser.add_argument('--n_neg', type=int, default=128, help='# negative inference samples')
     parser.add_argument('--n_mtc', type=int, default=999, help='# negative metric samples')
 
@@ -41,7 +41,7 @@ def main() -> None:
     parser.add_argument('--bs', type=int, default=32, help='batch size')
     parser.add_argument('--n_worker', type=int, default=0, help='# dataloader worker')
     parser.add_argument('--n_epoch', type=int, default=500, help='# epoch maximum')
-    parser.add_argument('--n_warmup', type=int, default=10, help='# warmup epoch')
+    parser.add_argument('--n_warmup', type=int, default=10, help='# warmup epoch. Set a value > 0 to avoid being stuck at the initial warmup lr.')
     parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')
     parser.add_argument('--l2', type=float, default=5e0, help='weight decay')
     parser.add_argument('--lr_g', type=float, default=0.3162, help='scheduler gamma')
@@ -49,8 +49,7 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    if args.n_warmup >= args.n_epoch:
-        args.n_warmup = max(0, args.n_epoch - 1)
+    args.n_warmup = min(max(0, args.n_epoch - 1), args.n_warmup)
 
     if args.cuda == 'cpu':
         args.device = torch.device('cpu')
