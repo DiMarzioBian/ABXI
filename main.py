@@ -39,7 +39,7 @@ def main() -> None:
     # Training
     parser.add_argument('--cuda', type=str, default='0', help='running device')
     parser.add_argument('--seed', type=int, default=3407, help='random seeding')
-    parser.add_argument('--bs', type=int, default=32, help='batch size')
+    parser.add_argument('--bs', type=int, default=256, help='batch size')
     parser.add_argument('--n_worker', type=int, default=4, help='# dataloader worker')
     parser.add_argument('--n_epoch', type=int, default=500, help='# epoch maximum')
     parser.add_argument('--n_warmup', type=int, default=10, help='# warmup epoch. Set a value > 0 to avoid being stuck at the initial warmup lr.')
