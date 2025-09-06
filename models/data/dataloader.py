@@ -1,4 +1,3 @@
-from typing import Tuple, List
 from argparse import Namespace
 
 from os.path import join
@@ -24,7 +23,7 @@ def trim_seq(seq: NDArray[np.int32],
 def get_spe_seq(n_item_a: int,
                 seq: NDArray[np.int32],
                 gt: NDArray[np.int32],
-                ) -> Tuple[NDArray[np.int32], NDArray[np.int32]]:
+                ) -> tuple[NDArray[np.int32], NDArray[np.int32]]:
     """
     Through task-guided alignment.
     """
@@ -55,7 +54,7 @@ def get_spe_seq(n_item_a: int,
 def process_train(n_item_a: int,
                   len_trim: int,
                   seq_raw: list[np.int32],
-                  ) -> Tuple[NDArray[np.int32], NDArray[np.int32], NDArray[np.int32], NDArray[np.int32], List]:
+                  ) -> tuple[NDArray[np.int32], NDArray[np.int32], NDArray[np.int32], NDArray[np.int32], list]:
     """ process training sequences """
     seq_x, gt = np.asarray(seq_raw[:-1], dtype=np.int32), np.asarray(seq_raw[1:], dtype=np.int32)
 
@@ -76,7 +75,7 @@ def process_evaluate(len_trim: int,
 
 def get_dataset(args: Namespace,
                 rng: np.random.Generator,
-                ) -> Tuple[Dataset, Dataset, Dataset]:
+                ) -> tuple[Dataset, Dataset, Dataset]:
     """ get datasets """
     if args.raw:
         print('Reading raw data...')
@@ -222,7 +221,7 @@ class EvalDataset(Dataset):
 
 
 def get_dataloader(args: Namespace,
-                   ) -> Tuple[DataLoader, DataLoader, DataLoader]:
+                   ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
     Return loaders for training, evaluation and testing.
     """
