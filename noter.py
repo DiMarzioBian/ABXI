@@ -1,8 +1,6 @@
-from argparse import Namespace
-from typing import Tuple
-
 import os
 from os.path import join
+from argparse import Namespace
 import time
 
 import torch.nn as nn
@@ -38,21 +36,21 @@ class Noter(object):
         print(msg)
         self.write(msg)
 
-    def log_num_param(self,
-                      model: nn.Module,
-                      ) -> None:
-        self.log_msg(f'[info] model contains {sum(p.numel() for p in model.parameters() if p.requires_grad)} '
-                     f'learnable parameters.\n')
-
     def log_settings(self) -> None:
         msg = (f'[Info] {self.args.name} (data:{self.args.data}, cuda:{self.args.cuda})\n'
                f'| Ver.  {self.args.ver} |\n'
-               f'| len_max {self.args.len_max} | d_embed {self.args.d_embed} |'
+               f'| len_max {self.args.len_max} | d_embed {self.args.d_embed} |\n'
                f'| n_attn {self.args.n_attn} | n_head {self.args.n_head} | dropout {self.args.dropout} |\n'
                f'| lr {self.args.lr:.2e} | l2 {self.args.l2:.2e} | lr_g {self.args.lr_g:.1f} | lr_p {self.args.lr_p} |\n\n'
                f'| seed {self.args.seed} |\n'
                f'| rd {self.args.rd} | ri {self.args.ri} |\n')
         self.log_msg(msg)
+
+    def log_num_param(self,
+                      model: nn.Module,
+                      ) -> None:
+        self.log_msg(f'[info] model contains {sum(p.numel() for p in model.parameters() if p.requires_grad)} '
+                     f'learnable parameters.\n')
 
     def log_lr(self,
                msg: str,
@@ -77,7 +75,7 @@ class Noter(object):
         self.log_msg(msg)
 
     def log_test(self,
-                 ranks: Tuple[list[float], list[float]],
+                 ranks: tuple[list[float], list[float]],
                  ) -> None:
         msg = f'           | te  |  *  | {ranks[0][0]:.4f} | {ranks[0][1]:.4f} | {ranks[0][2]:.4f} | {ranks[0][3]:.4f} | {ranks[1][0]:.4f} | {ranks[1][1]:.4f} | {ranks[1][2]:.4f} | {ranks[1][3]:.4f} |  *  |'
         self.log_msg(msg)

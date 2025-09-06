@@ -1,5 +1,3 @@
-from argparse import Namespace
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -34,16 +32,23 @@ class MultiHeadAttention(nn.Module):
     Post-norm residual connection integrated.
     """
     def __init__(self,
-                 args: Namespace,
+                 d_embed: int,
+                 n_head: int,
+                 len_trim: int,
+                 dropout: float = 0.1,
                  ) -> None:
         super().__init__()
-        self.mha = nn.MultiheadAttention(args.d_embed, args.n_head, batch_first=True)
-        self.dropout = nn.Dropout(args.dropout)
-        self.norm_mha = nn.LayerNorm(args.d_embed)
+        self.d_embed = d_embed
+        self.n_head = n_head
+        self.len_trim = len_trim
+
+        self.mha = nn.MultiheadAttention(self.d_embed, self.n_head, batch_first=True)
+        self.dropout = nn.Dropout(dropout)
+        self.norm_mha = nn.LayerNorm(self.d_embed)
 
         self.register_buffer('mask_causal',
-                             torch.triu(torch.full((args.len_trim,
-                                                    args.len_trim), True), diagonal=1),
+                             torch.triu(torch.full((self.len_trim,
+                                                    self.len_trim), True), diagonal=1),
                              persistent=False)
 
     def forward(self,

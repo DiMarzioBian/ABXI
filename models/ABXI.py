@@ -17,26 +17,24 @@ class ABXI(nn.Module):
                  args: Namespace,
                  ) -> None:
         super().__init__()
-        self.bs = args.bs
-        self.len_trim = args.len_trim
-        self.n_item = args.n_item
-        self.n_item_a = args.n_item_a
-        self.n_item_b = args.n_item_b
-        self.n_neg = args.n_neg
-        self.temp = args.temp
+        self.bs: int = args.bs
+        self.len_trim: int = args.len_trim
+        self.n_item: int = args.n_item
+        self.n_item_a: int = args.n_item_a
+        self.n_neg: int = args.n_neg
+        self.temp: float = args.temp
+        self.d_embed: int = args.d_embed
+        self.rd: int = args.rd
+        self.ri: int = args.ri
+
         self.dropout = nn.Dropout(p=args.dropout) if args.dropout  > 0. else nn.Identity()
-
-        self.d_embed = args.d_embed
-        self.rd = args.rd
-        self.ri = args.ri
-
 
         # item and positional embedding
         self.ei = nn.Embedding(self.n_item + 1, self.d_embed, padding_idx=0)
         self.ep = nn.Embedding(self.len_trim + 1, self.d_embed, padding_idx=0)
 
         # encoder, dlora
-        self.mha = MultiHeadAttention(args)
+        self.mha = MultiHeadAttention(args.d_embed, args.n_head, args.len_trim, args.dropout)
         self.ffn = FeedForward(self.d_embed)
 
         self.dlora_x = LoRA(self.d_embed, self.rd)

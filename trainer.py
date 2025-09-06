@@ -1,8 +1,7 @@
 from argparse import Namespace
-from noter import Noter
-
 import time
 from tqdm import tqdm
+
 import torch
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import LinearLR, ReduceLROnPlateau
@@ -10,6 +9,8 @@ from torch.optim.lr_scheduler import LinearLR, ReduceLROnPlateau
 from models.data.dataloader import get_dataloader
 from models.ABXI import ABXI
 from models.data.evaluation import cal_metrics
+
+from noter import Noter
 
 
 class Trainer(object):
@@ -72,16 +73,19 @@ class Trainer(object):
 
         return cal_metrics(ranks_f2a), cal_metrics(ranks_f2b)
 
-    def run_test(self) -> tuple[list, list]:
+    def run_test(self,
+                 ) -> tuple[list, list]:
         self.model.eval()
-        res_ranks = [[], []]
+        ranks_f2a, ranks_f2b = [], []
 
         with torch.no_grad():
             for batch in tqdm(self.test_loader, desc='testing', leave=False):
                 ranks_batch = self.evaluate_batch(batch)
-                res_ranks = [res + res_new for res, res_new in zip(res_ranks, ranks_batch)]
 
-        return cal_metrics(res_ranks[0]), cal_metrics(res_ranks[1])
+                ranks_f2a += ranks_batch[0]
+                ranks_f2b += ranks_batch[1]
+
+        return cal_metrics(ranks_f2a), cal_metrics(ranks_f2b)
 
     def train_batch(self,
                     batch: list[torch.Tensor],
