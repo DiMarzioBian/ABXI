@@ -1,5 +1,7 @@
 # ABXI-PyTorch
 
+***We have discovered a bug in the latest version, resulting in incorrect loss calculations. Please check this older [versions](https://github.com/DiMarzioBian/ABXI/tree/effcd56526bac6d7fadbece9b5b675cd03997a64). Although older versions are slower, the results are correct.***
+
 This is the ***official*** Pytorch implementation of paper "ABXI: Invariant Interest Adaptation for Task-Guided Cross-Domain Sequential Recommendation" accepted by WebConf'25 (WWW'25).
 
 Links: [ACM](https://dl.acm.org/doi/10.1145/3696410.3714819), [Arxiv](https://arxiv.org/abs/2501.15118), [DOI](https://doi.org/10.1145/3696410.3714819)
