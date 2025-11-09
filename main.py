@@ -16,7 +16,7 @@ def main() -> None:
     parser.add_argument('--name', type=str, default='ABXI (WWW\'25)', help='name of the model')
     parser.add_argument('--ver', type=str, default='v1.0', help='final')
 
-    parser.add_argument('--data', type=str, default='amb', help=''
+    parser.add_argument('--data', type=str, default='abe', help=''
                                                                 'afk: Food-Kitchen'
                                                                 'abe: Beauty-Electronics'
                                                                 'amb: Movie-Book')
@@ -27,7 +27,7 @@ def main() -> None:
     parser.add_argument('--ri', type=int, default=8, help='rank of invariant lora')
 
     # Data
-    parser.add_argument('--raw', action='store_false', help='use raw data from c2dsr, takes longer time')
+    parser.add_argument('--raw', action='store_true', help='use raw data from c2dsr, takes longer time')
     parser.add_argument('--n_neg', type=int, default=128, help='# negative inference samples')
     parser.add_argument('--n_mtc', type=int, default=999, help='# negative metric samples')
 

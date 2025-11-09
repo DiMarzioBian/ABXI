@@ -237,7 +237,7 @@ def get_dataloader(args: Namespace,
     rng = np.random.default_rng()
 
     train_set, valid_set, test_set = get_dataset(args, rng)
-    train_loader = DataLoader(train_set, batch_size=args.bs, shuffle=False, num_workers=args.n_worker, pin_memory=True)
+    train_loader = DataLoader(train_set, batch_size=args.bs, shuffle=True, num_workers=args.n_worker, pin_memory=True)
     val_loader = DataLoader(valid_set, batch_size=args.bse, shuffle=False, num_workers=args.n_worker, pin_memory=True)
     test_loader = DataLoader(test_set, batch_size=args.bse, shuffle=False, num_workers=args.n_worker, pin_memory=True)
     return train_loader, val_loader, test_loader
