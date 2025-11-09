@@ -35,7 +35,7 @@ class MultiHeadAttention(nn.Module):
                  d_embed: int,
                  n_head: int,
                  len_trim: int,
-                 dropout: float = 0.1,
+                 dropout: float = 0.5,
                  ) -> None:
         super().__init__()
         self.d_embed = d_embed

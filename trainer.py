@@ -30,8 +30,10 @@ class Trainer(object):
 
         # model
         self.model = ABXI(args).to(args.device)
-
-        self.optimizer = AdamW(self.model.parameters(), lr=args.lr, weight_decay=args.l2)
+        self.model.compile(mode='reduce-overhead',
+                           dynamic=True,  # will accelerate on larger datasets if throwing
+                           disable=True)
+        self.optimizer = AdamW(self.model.parameters(), lr=args.lr, weight_decay=args.l2, )  # capturable=True, fused=True)
         self.scheduler_warmup = LinearLR(self.optimizer, start_factor=1e-5, end_factor=1., total_iters=args.n_warmup)
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode='max', factor=args.lr_g, patience=args.lr_p)
 
@@ -93,12 +95,12 @@ class Trainer(object):
         seq_x, seq_a, seq_b, gt, gt_neg = map(lambda x: x.to(self.device), batch)
 
         # masking
-        mask_x = (seq_x != 0).unsqueeze(-1).half()
-        mask_a = (seq_a != 0).unsqueeze(-1).half()
-        mask_b = (seq_b != 0).unsqueeze(-1).half()
+        mask_x = (seq_x != 0).unsqueeze(-1).to(torch.int32)
+        mask_a = (seq_a != 0).unsqueeze(-1).to(torch.int32)
+        mask_b = (seq_b != 0).unsqueeze(-1).to(torch.int32)
 
-        mask_gt_a = (gt <= self.n_item_a).half()
-        mask_gt_b = (gt > self.n_item_a).half()
+        mask_gt_a = (0 < gt ) & (gt <= self.n_item_a).to(torch.int32)
+        mask_gt_b = (gt > self.n_item_a).to(torch.int32)
 
         h = self.model(seq_x, seq_a, seq_b, mask_x, mask_a, mask_b, mask_gt_a, mask_gt_b)
 
@@ -111,25 +113,20 @@ class Trainer(object):
     def evaluate_batch(self,
                        batch: list[torch.Tensor],
                        ) -> tuple[list[float], list[float]]:
-        seq_x, gt, gt_mtc = map(lambda x: x.to(self.device), batch)
+        seq_x, seq_a, seq_b, gt, gt_mtc = map(lambda x: x.to(self.device), batch)
 
-        mask_gt_a = (gt <= self.n_item_a).half()
-        mask_gt_b = (gt > self.n_item_a).half()
+        # generate mask
+        mask_x = (seq_x != 0).to(torch.int32).unsqueeze(-1)
+        mask_a = (seq_a != 0).to(torch.int32).unsqueeze(-1)
+        mask_b = (seq_b != 0).to(torch.int32).unsqueeze(-1)
 
-        # generate specific-domain sequences and masks
-        seq_a = torch.zeros_like(seq_x, dtype=torch.long)
-        seq_b = torch.zeros_like(seq_x, dtype=torch.long)
-
-        mask_x = (seq_x != 0).unsqueeze(-1).half()
-        mask_a = (seq_x > 0) & (seq_x <= self.n_item_a)
-        mask_b = seq_x > self.n_item_a
-
-        seq_a[mask_a] = seq_x[mask_a]
-        seq_b[mask_b] = seq_x[mask_b]
-
-        mask_a = mask_a.unsqueeze(-1).half()
-        mask_b = mask_b.unsqueeze(-1).half()
-
+        # evaluate
+        mask_gt_a = (0 < gt) & (gt <= self.n_item_a).to(torch.int32)
+        mask_gt_b = (gt > self.n_item_a).to(torch.int32)
         h = self.model(seq_x, seq_a, seq_b, mask_x, mask_a, mask_b, mask_gt_a, mask_gt_b)
 
-        return self.model.cal_rank(h, gt, gt_mtc, mask_gt_a, mask_gt_b)
+        ranks = self.model.cal_rank(h, gt, gt_mtc)
+        ranks_a = ranks[mask_gt_a.squeeze(-1) == 1].tolist()
+        ranks_b = ranks[mask_gt_b.squeeze(-1) == 1].tolist()
+
+        return ranks_a, ranks_b

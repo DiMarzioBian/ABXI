@@ -19,6 +19,7 @@ class ABXI(nn.Module):
         super().__init__()
         self.bs: int = args.bs
         self.len_trim: int = args.len_trim
+        self.n_head: int = args.n_head
         self.n_item: int = args.n_item
         self.n_item_a: int = args.n_item_a
         self.n_neg: int = args.n_neg
@@ -34,7 +35,7 @@ class ABXI(nn.Module):
         self.ep = nn.Embedding(self.len_trim + 1, self.d_embed, padding_idx=0)
 
         # encoder, dlora
-        self.mha = MultiHeadAttention(args.d_embed, args.n_head, args.len_trim, args.dropout)
+        self.mha = MultiHeadAttention(self.d_embed, self.n_head, self.len_trim, args.dropout)
         self.ffn = FeedForward(self.d_embed)
 
         self.dlora_x = LoRA(self.d_embed, self.rd)
@@ -78,13 +79,9 @@ class ABXI(nn.Module):
                 ) -> torch.Tensor:
 
         # embedding
-        h_x = (self.ei(seq_x) + self.embed_pos(mask_x)) * mask_x
-        h_a = (self.ei(seq_a) + self.embed_pos(mask_a)) * mask_a
-        h_b = (self.ei(seq_b) + self.embed_pos(mask_b)) * mask_b
-
-        h_x = self.dropout(h_x)
-        h_a = self.dropout(h_a)
-        h_b = self.dropout(h_b)
+        h_x = self.dropout((self.ei(seq_x) + self.embed_pos(mask_x)) * mask_x)
+        h_a = self.dropout((self.ei(seq_a) + self.embed_pos(mask_a)) * mask_a)
+        h_b = self.dropout((self.ei(seq_b) + self.embed_pos(mask_b)) * mask_b)
 
         # mha
         h_x = self.mha(h_x, mask_x)
@@ -123,19 +120,15 @@ class ABXI(nn.Module):
 
         h_a = (self.norm_i2a((h_x +
                               self.dropout(h_i) +
-                              self.dropout(self.ilora_a(h_x))
-                              ) * mask_gt_a) +
+                              self.dropout(self.ilora_a(h_x))) * mask_gt_a) +
                self.norm_a2a((h_a +
-                              self.dropout(self.proj_a(h_a))
-                              ) * mask_gt_a))
+                              self.dropout(self.proj_a(h_a))) * mask_gt_a))
 
         h_b = (self.norm_i2b((h_x +
                               self.dropout(h_i) +
-                              self.dropout(self.ilora_b(h_x))
-                              ) * mask_gt_b) +
+                              self.dropout(self.ilora_b(h_x))) * mask_gt_b) +
                self.norm_b2b((h_b +
-                              self.dropout(self.proj_b(h_b))
-                              ) * mask_gt_b))
+                              self.dropout(self.proj_b(h_b))) * mask_gt_b))
 
         h = h_a * mask_gt_a + h_b * mask_gt_b
 
@@ -160,36 +153,14 @@ class ABXI(nn.Module):
         loss_b = (loss * cal_norm_mask(mask_gt_b)).sum(-1).mean()
         return loss_a, loss_b
 
-    @staticmethod
-    def cal_domain_rank(h: torch.Tensor,
-                        e_gt: torch.Tensor,
-                        e_mtc: torch.Tensor,
-                        mask_gt_a: torch.Tensor,
-                        mask_gt_b: torch.Tensor,
-                        ) -> tuple[list[float], list[float]]:
-        """ calculate domain rank via inner-product similarity """
-        logit_gt = (h * e_gt.squeeze(1)).sum(dim=-1, keepdims=True)
-        logit_mtc = (h.unsqueeze(1) * e_mtc).sum(-1)
-
-        ranks = (logit_mtc - logit_gt).gt(0).sum(-1).add(1)
-        ranks_a = ranks[mask_gt_a == 1].tolist()
-        ranks_b = ranks[mask_gt_b == 1].tolist()
-
-        return ranks_a, ranks_b
-
     def cal_rank(self,
-                 h_f: torch.Tensor,
+                 h: torch.Tensor,
                  gt: torch.Tensor,
                  gt_mtc: torch.Tensor,
-                 mask_gt_a: torch.Tensor,
-                 mask_gt_b: torch.Tensor,
-                 ) -> tuple[list[float], list[float]]:
+                 ) -> torch.Tensor:
         """ rank via inner-product similarity """
-        mask_gt_a = mask_gt_a.squeeze(-1)
-        mask_gt_b = mask_gt_b.squeeze(-1)
-
         e_gt, e_mtc = self.ei(gt),  self.ei(gt_mtc)
+        e_all = torch.cat([e_gt, e_mtc], dim=1)
+        logits = torch.bmm(h.unsqueeze(1), e_all.transpose(1, 2)).squeeze(1)
 
-        ranks_f2a, ranks_f2b = self.cal_domain_rank(h_f, e_gt, e_mtc, mask_gt_a, mask_gt_b)
-
-        return ranks_f2a, ranks_f2b
+        return logits[:, 1:].gt(logits[:, 0:1]).sum(dim=1).add(1)

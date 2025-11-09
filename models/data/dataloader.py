@@ -66,13 +66,20 @@ def process_train(seq_raw: list[np.int32],
 
 
 def process_evaluate(seq_raw: list[np.int32],
+                     n_item_a: int,
                      len_trim: int,
                      ) -> tuple[NDArray[np.int32], ...]:
     """ process evaluation sequences """
-    seq, gt = np.asarray(seq_raw[:-1], dtype=np.int32), np.asarray(seq_raw[-1:], dtype=np.int32)
-    seq = trim_seq(seq, len_trim)
+    seq_x, gt = np.asarray(seq_raw[:-1], dtype=np.int32), np.asarray(seq_raw[-1:], dtype=np.int32)
 
-    return seq, gt, seq_raw
+    seq_a = seq_x[(0 < seq_x) & (seq_x <= n_item_a)]
+    seq_b = seq_x[seq_x > n_item_a]
+
+    seq_x = trim_seq(seq_x, len_trim)
+    seq_a = trim_seq(seq_a, len_trim)
+    seq_b = trim_seq(seq_b, len_trim)
+
+    return seq_x, seq_a, seq_b, gt, seq_raw
 
 
 def get_dataset(args: Namespace,
@@ -103,8 +110,8 @@ def get_dataset(args: Namespace,
         data_te = []
         for seq in tqdm(data_seq, desc='processing', leave=False):
             data_tr.append(process_train(seq[:-2], args.n_item_a, args.len_trim))
-            data_val.append(process_evaluate(seq[:-1], args.len_trim))
-            data_te.append(process_evaluate(seq, args.len_trim))
+            data_val.append(process_evaluate(seq[:-1], args.n_item_a, args.len_trim))
+            data_te.append(process_evaluate(seq, args.n_item_a, args.len_trim))
 
         print('Saving serialized seqs...')
         with open(args.f_data, 'wb') as f:
@@ -215,11 +222,11 @@ class EvalDataset(Dataset):
     def __getitem__(self,
                     index: int,
                     ) -> tuple[torch.LongTensor, ...]:
-        seq, gt, seq_raw = self.data[index]
+        seq_x, seq_a, seq_b, gt, seq_raw = self.data[index]
 
         gt_mtc = self.get_mtc(gt, seq_raw)
 
-        return tuple(map(lambda x: torch.LongTensor(x), (seq, gt, gt_mtc)))
+        return tuple(map(lambda x: torch.LongTensor(x), (seq_x, seq_a, seq_b, gt, gt_mtc)))
 
 
 def get_dataloader(args: Namespace,
@@ -230,7 +237,7 @@ def get_dataloader(args: Namespace,
     rng = np.random.default_rng()
 
     train_set, valid_set, test_set = get_dataset(args, rng)
-    train_loader = DataLoader(train_set, batch_size=args.bs, shuffle=True, num_workers=args.n_worker, pin_memory=True)
+    train_loader = DataLoader(train_set, batch_size=args.bs, shuffle=False, num_workers=args.n_worker, pin_memory=True)
     val_loader = DataLoader(valid_set, batch_size=args.bse, shuffle=False, num_workers=args.n_worker, pin_memory=True)
     test_loader = DataLoader(test_set, batch_size=args.bse, shuffle=False, num_workers=args.n_worker, pin_memory=True)
     return train_loader, val_loader, test_loader
