@@ -16,17 +16,12 @@ def main() -> None:
     parser.add_argument('--name', type=str, default='ABXI (WWW\'25)', help='name of the model')
     parser.add_argument('--ver', type=str, default='v1.0', help='final')
 
+    # Data
     parser.add_argument('--data', type=str, default='abe', help=''
                                                                 'afk: Food-Kitchen'
                                                                 'abe: Beauty-Electronics'
                                                                 'amb: Movie-Book')
     parser.add_argument('--len_max', type=int, default=50, help='# of interactions allowed to input')
-
-    # lora
-    parser.add_argument('--rd', type=int, default=8, help='rank of domain lora')
-    parser.add_argument('--ri', type=int, default=8, help='rank of invariant lora')
-
-    # Data
     parser.add_argument('--raw', action='store_true', help='use raw data from c2dsr, takes longer time')
     parser.add_argument('--n_neg', type=int, default=128, help='# negative inference samples')
     parser.add_argument('--n_mtc', type=int, default=999, help='# negative metric samples')
@@ -37,6 +32,10 @@ def main() -> None:
     parser.add_argument('--n_head', type=int, default=2, help='# multi-head for self-attention')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout rate')
     parser.add_argument('--temp', type=float, default=0.75, help='temperature for Recommendation')
+
+    # lora
+    parser.add_argument('--rd', type=int, default=8, help='rank of domain lora')
+    parser.add_argument('--ri', type=int, default=8, help='rank of invariant lora')
 
     # Training
     parser.add_argument('--cuda', type=str, default='0', help='running device')
