@@ -142,11 +142,11 @@ class ABXI(nn.Module):
                      mask_gt_b: torch.Tensor,
                      ) -> tuple[torch.Tensor, torch.Tensor]:
         """ InfoNCE """
-        e_gt = self.ei(gt)
+        e_gt = self.ei(gt).unsqueeze(-2)
         e_neg = self.ei(gt_neg)
+        e_all = torch.cat([e_gt, e_neg], dim=-2)
 
-        logits = torch.cat(((h * e_gt).unsqueeze(-2).sum(-1),
-                            (h.unsqueeze(-2) * e_neg).sum(-1)), dim=-1).div(self.temp)
+        logits = torch.einsum('bld,blnd->bln', h, e_all).div(self.temp)
 
         loss = -F.log_softmax(logits, dim=2)[:, :, 0]
         loss_a = (loss * cal_norm_mask(mask_gt_a)).sum(-1).mean()
@@ -161,6 +161,6 @@ class ABXI(nn.Module):
         """ rank via inner-product similarity """
         e_gt, e_mtc = self.ei(gt),  self.ei(gt_mtc)
         e_all = torch.cat([e_gt, e_mtc], dim=1)
-        logits = torch.bmm(h.unsqueeze(1), e_all.transpose(1, 2)).squeeze(1)
+        logits = torch.einsum('bd,bnd->bn', h, e_all)
 
         return logits[:, 1:].gt(logits[:, 0:1]).sum(dim=1).add(1)
