@@ -21,7 +21,7 @@ def main() -> None:
                                                                 'afk: Food-Kitchen'
                                                                 'abe: Beauty-Electronics'
                                                                 'amb: Movie-Book')
-    parser.add_argument('--raw', action='store_true', help='use raw data from c2dsr, takes longer time')
+    parser.add_argument('--raw', action='store_false', help='use raw data from c2dsr, takes longer time')
     parser.add_argument('--len_max', type=int, default=50, help='# of interactions allowed to input')
     parser.add_argument('--n_neg', type=int, default=128, help='# negative inference samples')
     parser.add_argument('--n_mtc', type=int, default=999, help='# negative metric samples')

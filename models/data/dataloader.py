@@ -10,6 +10,9 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 
 
+rng = np.random.default_rng()
+
+
 def trim_seq(seq: NDArray[np.int32],
              len_trim: int,
              ) -> NDArray[np.int32]:
@@ -83,7 +86,6 @@ def process_evaluate(seq_raw: list[np.int32],
 
 
 def get_dataset(args: Namespace,
-                rng: np.random.Generator,
                 ) -> tuple[Dataset, ...]:
     """ get datasets """
     if args.raw:
@@ -125,7 +127,7 @@ def get_dataset(args: Namespace,
     args.n_item = args.n_item_a + args.n_item_b
     args.n_user = len(data_tr)
 
-    return TrainDataset(args, data_tr, rng), EvalDataset(args, data_val, rng), EvalDataset(args, data_te, rng)
+    return TrainDataset(args, data_tr), EvalDataset(args, data_val), EvalDataset(args, data_te)
 
 
 class TrainDataset(Dataset):
@@ -133,7 +135,6 @@ class TrainDataset(Dataset):
     def __init__(self,
                  args: Namespace,
                  data: list[tuple[NDArray[np.int32]]],
-                 rng: np.random.Generator,
                  ) -> None:
         self.len_trim = args.len_trim
         self.n_neg = args.n_neg
@@ -146,15 +147,11 @@ class TrainDataset(Dataset):
         self.idx_all_a = np.arange(1, args.n_item_a + 1)
         self.idx_all_b = np.arange(args.n_item_a, args.n_item + 1)
 
-        self.rng = rng
-
     def get_neg(self,
                 gt: NDArray[np.int32],
                 cand_a: NDArray[np.int32],
                 cand_b: NDArray[np.int32],
                 ) -> NDArray[np.int32]:
-        rng = self.rng
-
         gt_neg = np.zeros((self.len_trim, self.n_neg_x2), dtype=np.int32)
 
         for i, x in enumerate(gt):
@@ -185,7 +182,6 @@ class EvalDataset(Dataset):
     def __init__(self,
                  args: Namespace,
                  data: list[tuple[NDArray[np.int32]]],
-                 rng: np.random.Generator,
                  ) -> None:
         self.len_trim = args.len_trim
         self.n_item_a = args.n_item_a
@@ -198,19 +194,17 @@ class EvalDataset(Dataset):
         self.idx_all_a = np.arange(1, args.n_item_a + 1)
         self.idx_all_b = np.arange(args.n_item_a, args.n_item + 1)
 
-        self.rng = rng
-
     def get_mtc(self,
                 gt: NDArray[np.int32],
                 seq_raw: NDArray[np.int32],
                 ) -> NDArray[np.int32]:
         if gt <= self.n_item_a:
-            gt_mtc = self.rng.choice(
+            gt_mtc = rng.choice(
                 self.idx_all_a[~np.isin(self.idx_all_a, seq_raw[seq_raw <= self.n_item_a], assume_unique=True)],
                 size=self.n_mtc, replace=False)
 
         else:
-            gt_mtc = self.rng.choice(
+            gt_mtc = rng.choice(
                 self.idx_all_b[~np.isin(self.idx_all_b, seq_raw[seq_raw > self.n_item_a], assume_unique=True)],
                 size=self.n_mtc, replace=False)
 
@@ -234,9 +228,7 @@ def get_dataloader(args: Namespace,
     """
     Return loaders for training, evaluation and testing.
     """
-    rng = np.random.default_rng()
-
-    train_set, valid_set, test_set = get_dataset(args, rng)
+    train_set, valid_set, test_set = get_dataset(args)
     train_loader = DataLoader(train_set, batch_size=args.bs, shuffle=True, num_workers=args.n_worker, pin_memory=True)
     val_loader = DataLoader(valid_set, batch_size=args.bse, shuffle=False, num_workers=args.n_worker, pin_memory=True)
     test_loader = DataLoader(test_set, batch_size=args.bse, shuffle=False, num_workers=args.n_worker, pin_memory=True)
